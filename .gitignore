@@ -1,0 +1,9 @@
+#Modulos de node:
+/node_modules
+
+#Variables de entorno:
+.env
+.env.*
+
+# Configuración del IDE:
+.vscode/
