@@ -56,4 +56,15 @@ export const MedicoService = {
     medicoRepository.save(medico);
     return actualizada;
   },
+
+  eliminarDisponibilidad(medicoId, diaSemana) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    const index = medico.disponibilidades.findIndex(d => d.diaSemana === diaSemana);
+    if (index === -1) throw new DisponibilidadNotFoundError(diaSemana);
+
+    medico.disponibilidades.splice(index, 1);
+    medicoRepository.save(medico);
+  },
 };
