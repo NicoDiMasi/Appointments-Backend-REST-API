@@ -11,6 +11,12 @@ function horaAMinutos(hora) {
 }
 
 export const MedicoService = {
+  listarDisponibilidades(medicoId) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+    return medico.disponibilidades;
+  },
+
   agregarDisponibilidad(medicoId, datos) {
     const medico = medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
