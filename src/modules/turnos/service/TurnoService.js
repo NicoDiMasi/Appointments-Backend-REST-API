@@ -19,8 +19,22 @@ function faltaMasDeUnaHora(fechaHoraTurno) { //Para la cancelación del turno
 export class TurnoService {
 
     constructor(turnoRepository) {
-        this.turnoRepository = turnoRepository;
+        this.turnoRepository = turnoRepository; 
         this.agenda = new Agenda();
+    }
+
+    findAll() {
+      return this.turnoRepository.findAll();
+    }
+    
+    findById(turnoId) {
+      const turno = this.turnoRepository.findById(turnoId);
+    
+      if (!turno) {
+        throw new TurnoNotFoundError(turnoId);
+      }
+  
+      return turno;
     }
 
     crearTurno(datosTurno) {
