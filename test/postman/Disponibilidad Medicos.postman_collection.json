@@ -1,0 +1,383 @@
+{
+  "info": {
+    "_postman_id": "9b5dac45-9c0a-4c7e-b1ec-a2c16b7cf3e9",
+    "name": "Disponibilidad Medicos",
+    "description": "Tests de Postman para endpoints de disponibilidad de medicos. Ejecutar con el servidor levantado en localhost:3000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54359622",
+    "_collection_link": "https://go.postman.co/collection/54359622-9b5dac45-9c0a-4c7e-b1ec-a2c16b7cf3e9?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar disponibilidades de medico existente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar disponibilidades de medico inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/med-inexistente/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "med-inexistente",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Agregar disponibilidad valida",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"MARTES\",\n  \"horaDesde\": \"10:00\",\n  \"horaHasta\": \"13:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Rechazar disponibilidad duplicada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"LUNES\",\n  \"horaDesde\": \"15:00\",\n  \"horaHasta\": \"18:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Rechazar disponibilidad con horarios invalidos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"JUEVES\",\n  \"horaDesde\": \"14:00\",\n  \"horaHasta\": \"10:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar disponibilidad existente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"horaDesde\": \"09:00\",\n  \"horaHasta\": \"12:30\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/LUNES",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "LUNES"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar disponibilidad inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"horaDesde\": \"09:00\",\n  \"horaHasta\": \"12:30\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/DOMINGO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "DOMINGO"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar disponibilidad creada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/MARTES",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "MARTES"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "medicoId",
+      "value": "med-001",
+      "type": "string"
+    }
+  ]
+}
