@@ -17,7 +17,7 @@ export class Turno {
         this.duracionTurno = especialidad.duracionTurnoEnMins
     }
 
-
+    
     actualizarEstado(nuevoEstado, quien, motivo) {
         if (!nuevoEstado || !ESTADOS_VALIDOS.includes(nuevoEstado)) {
             throw new Error(`nuevoEstado inválido. Valores permitidos: ${ESTADOS_VALIDOS.join(', ')}`);
@@ -76,5 +76,17 @@ export class Turno {
             historialEstados: historialEstados ?? [],
             costo,
         });
+    }
+
+    diaTurno() {
+      return this.fechaHora.getDay();
+    }
+
+    inicioTurno() {
+      return this.fechaHora.getHours() * 60 + this.fechaHora.getMinutes();
+    }
+
+    finTurno() {
+      return this.getInicioEnMinutos() + this.duracionTurno;
     }
 }

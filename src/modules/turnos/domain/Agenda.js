@@ -1,3 +1,5 @@
+
+
 export class Agenda {
 
   generarTurnosPara(especialidad, medico) {
@@ -9,33 +11,42 @@ export class Agenda {
 
   refrescarTurnosSegunDisponibilidadDe(medico) {}
 
-  validarTurno(turno, medico){ //Mepa que esto iría mas en turnos
+  estaDisponible(turno, turnosDelMedico){
 
+    return this.validarDiaYHorario(turno, turno.medico.disponibilidades) && 
+    !turnosDelMedico.some((turnoOcupado) =>{
+      return this.seSuperponen(turno,turnoOcupado);
+    }) 
   }
 
-  seSuperponen(inicioA, finA, inicioB, finB){ 
-    return inicioA < finB && finA > inicioB
+  seSuperponen(turnoA, turnoB){ 
+    return turnoA.inicioTurno() < turnoB.finTurno() && turnoA.finTurno() > turnoB.inicioTurno();
   }
 
   validarDiaYHorario(turno, disponibilidades){
-    const diaTurno = obtenerDiaSemana(turno.fechaHora);
-    const inicioTurno = obtenerMinutosDelDia(turno.fechaHora);
-    const finTurno = inicioTurno + turno.duracionTurno;
 
-    disponibilidades.some((disponibilidadHoraria) => {
-      const inicioDisponibilidad = obtenerMinutosDelDia(disponibilidadHoraria.horaDesde);
-      const finDisponibilidad = obtenerMinutosDelDia(disponibilidadHoraria.horaHasta);
+    return disponibilidades.some((disponibilidadHoraria) => {
+      const inicioDisponibilidad = this.obtenerMinutosDelDia(disponibilidadHoraria.horaDesde);
+      const finDisponibilidad = this.obtenerMinutosDelDia(disponibilidadHoraria.horaHasta);
       const diaDisponibilidad = disponibilidadHoraria.diaSemana;
-      return diaDisponibilidad === diaTurno && inicioTurno >= inicioDisponibilidad && finTurno <= finDisponibilidad;
+      return diaDisponibilidad === turno.diaTurno() && turno.inicioTurno() >= inicioDisponibilidad && turno.finTurno() <= finDisponibilidad;
   })
   }
   obtenerDiaSemana(fechaHora) {
     return new Date(fechaHora).getDay();
   }
 
-  obtenerMinutosDelDia(fechaHora) {
-    const fecha = new Date(fechaHora);
-    return fecha.getHours() * 60 + fecha.getMinutes();
+  obtenerMinutosDelDia(valor) {
+    if (valor instanceof Date) {
+      return valor.getHours() * 60 + valor.getMinutes();
+    }
+
+    if (typeof valor === "string") {
+      const [horas, minutos] = valor.split(":").map(Number);
+      return horas * 60 + minutos;
+    }
+
+    throw new Error("Formato de hora inválido");
   }
 
 }
