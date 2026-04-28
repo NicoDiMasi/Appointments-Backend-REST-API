@@ -4,16 +4,17 @@ import { CambioEstadoTurno } from './CambioEstadoTurno.js';
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
 export class Turno {
-    constructor({ id, medico, paciente, fechaHora, sede, practica, estado, historialEstados, costo }) {
+    constructor({ id, medico, paciente, fechaHora, sede, especialidad, estado, historialEstados, costo }) {
         this.id = id;
         this.medico = medico;
         this.paciente = paciente;
         this.fechaHora = fechaHora;
         this.sede = sede;
-        this.practica = practica;
+        this.especialidad = especialidad;
         this.estado = estado;
         this.historialEstados = historialEstados ?? [];
         this.costo = costo;
+        this.duracionTurno = especialidad.duracionTurnoEnMins
     }
 
 
