@@ -28,8 +28,12 @@ export class TurnoController {
 
   create(req, res) {
     try {
-      const turnoCreado = this.turnoService.crearTurno(req.body);
-
+      const datosTurno = {
+        ...req.body,
+        fechaHora: new Date(req.body.fechaHora),
+      };
+      const turnoCreado = this.turnoService.crearTurno(datosTurno);
+      
       return res.status(201).json(turnoCreado);
     } catch (error) {
       return this.handleError(res, error);

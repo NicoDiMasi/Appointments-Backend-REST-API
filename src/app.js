@@ -14,6 +14,6 @@ app.get('/', (req, res) => {
 
 app.use('/health', healthRouter);
 app.use('/medicos', medicosRouter);
-router.use('/turno', turnoRouter);
+app.use(router);
 
 export default app;
