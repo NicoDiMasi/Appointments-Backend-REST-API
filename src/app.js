@@ -1,5 +1,6 @@
 import express from 'express';
 import healthRouter from './modules/health/health.router.js';
+import medicosRouter from './modules/medicos/medicos.router.js';
 
 const app = express();
 
@@ -11,5 +12,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/health', healthRouter);
+app.use('/medicos', medicosRouter);
 
 export default app;
