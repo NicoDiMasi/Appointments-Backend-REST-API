@@ -87,6 +87,6 @@ export class Turno {
     }
 
     finTurno() {
-      return this.getInicioEnMinutos() + this.duracionTurno;
+      return this.inicioTurno() + this.duracionTurno;
     }
 }
