@@ -9,7 +9,6 @@ import {
     TurnoInvalidoError,
 } from '../errors/TurnoErrors.js';
 
-const agenda = new Agenda();
 
 function faltaMasDeUnaHora(fechaHoraTurno) { //Para la cancelación del turno
     const ahora = new Date();
@@ -21,6 +20,7 @@ export class TurnoService {
 
     constructor(turnoRepository) {
         this.turnoRepository = turnoRepository;
+        this.agenda = new Agenda();
     }
 
     crearTurno(datosTurno) {
@@ -31,10 +31,7 @@ export class TurnoService {
         );
 
 
-        const estaDisponible = agenda.estaDisponible(
-            turnoNuevo,
-            turnosDelMedico
-        );
+        const estaDisponible = this.agenda.estaDisponible(turnoNuevo,turnosDelMedico);
 
         if (!estaDisponible) {
             throw new Error("El médico no está disponible en ese horario");
@@ -62,19 +59,17 @@ export class TurnoService {
                 fechaHora: nuevaFechaHora,
                 sede: cambios.sede ?? turno.sede,
                 especialidad: cambios.especialidad ?? turno.especialidad,
+                practica: cambios.practica ?? turno.practica,
                 estado: turno.estado,
                 historialEstados: turno.historialEstados,
                 costo: cambios.costo ?? turno.costo,
             });
 
-            const turnosDelMedico = this.TurnoRepository
+            const turnosDelMedico = this.turnoRepository
                 .findByMedicoId(turno.medico.id)
                 .filter(t => t.id !== turno.id);
 
-            const estaDisponible = agenda.estaDisponible(
-                turnoActualizadoTemporal,
-                turnosDelMedico
-            );
+            const estaDisponible = this.agenda.estaDisponible(turnoActualizadoTemporal,turnosDelMedico);
 
             if (!estaDisponible) {
                 throw new TurnoNoDisponibleError();
@@ -100,11 +95,11 @@ export class TurnoService {
             turno.costo = cambios.costo;
         }
 
-        return this.TurnoRepository.save(turno);
+        return this.turnoRepository.save(turno);
     }
 
     darDeBajaTurno(turnoId, usuario, motivo) { //Dar de baja, no es DELETE, es actualizar estado
-        const turno = this.TurnoRepository.findById(turnoId);
+        const turno = this.turnoRepository.findById(turnoId);
 
         if (!turno) {
             throw new TurnoNotFoundError(turnoId);
@@ -120,11 +115,11 @@ export class TurnoService {
             motivo
         );
 
-        return this.TurnoRepository.save(turno);
+        return this.turnoRepository.save(turno);
     }
 
     eliminarTurno(turnoId) {
-        const turno = this.TurnoRepository.findById(turnoId);
+        const turno = this.turnoRepository.findById(turnoId);
 
         if (!turno) {
             throw new TurnoNotFoundError(turnoId);
@@ -134,6 +129,6 @@ export class TurnoService {
             throw new TurnoBajaFueraDeTiempoError();
         }
 
-        this.TurnoRepository.deleteById(turnoId);
+        this.turnoRepository.deleteById(turnoId);
     }
 }
