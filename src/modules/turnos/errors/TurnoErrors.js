@@ -29,3 +29,11 @@ export class TurnoInvalidoError extends Error {
     this.statusCode = 400;
   }
 }
+
+export class TurnoBajaFueraDeTiempoError extends Error {
+  constructor() {
+    super('El turno solo puede darse de baja hasta una hora antes del horario del mismo');
+    this.name = 'TurnoBajaFueraDeTiempoError';
+    this.statusCode = 400;
+  }
+}
