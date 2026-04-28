@@ -9,7 +9,7 @@ export class Agenda {
 
   refrescarTurnosSegunDisponibilidadDe(medico) {}
 
-  validarTurno(turno, medico){
+  validarTurno(turno, medico){ //Mepa que esto iría mas en turnos
 
   }
 

@@ -1,7 +1,22 @@
 import { Turno } from '../domain/Turno.js';
 import { Agenda } from '../domain/Agenda.js';
+import { EstadoTurno } from '../domain/EstadoTurno.js';
 import { TurnoRepository } from '../repository/TurnoRepository.js';
+import {
+  TurnoNotFoundError,
+  TurnoNoDisponibleError,
+  TurnoBajaFueraDeTiempoError,
+  TurnoInvalidoError,
+} from '../errors/TurnoErrors.js';
 
+const agenda = new Agenda();
+
+function faltaMasDeUnaHora(fechaHoraTurno) { //Para la cancelación del turno
+  const ahora = new Date();
+  const unaHoraEnMs = 60 * 60 * 1000;
+
+  return fechaHoraTurno.getTime() - ahora.getTime() >= unaHoraEnMs;
+}
 export class TurnoService {
 
   constructor(turnoRepository) {
@@ -15,7 +30,8 @@ export class TurnoService {
       turnoNuevo.medico.id
     );
 
-    const estaDisponible = this.agenda.estaDisponible(
+
+    const estaDisponible = agenda.estaDisponible(
       turnoNuevo,
       turnosDelMedico
     );
@@ -25,5 +41,99 @@ export class TurnoService {
     }
 
     return this.turnoRepository.save(turnoNuevo);
+  };
+
+  actualizarTurno(turnoId, cambios) {
+    const turno = turnoRepository.findById(turnoId);
+
+    if (!turno) throw new TurnoNotFoundError(turnoId);
+
+    if (cambios.fechaHora !== undefined) {
+      const nuevaFechaHora = new Date(cambios.fechaHora);
+
+      if (Number.isNaN(nuevaFechaHora.getTime())) {
+        throw new TurnoInvalidoError('La fecha y hora del turno no es válida');
+      }
+
+      const turnoActualizadoTemporal = Turno.create({
+        id: turno.id,
+        medico: turno.medico,
+        paciente: turno.paciente,
+        fechaHora: nuevaFechaHora,
+        sede: cambios.sede ?? turno.sede,
+        especialidad: cambios.especialidad ?? turno.especialidad,
+        estado: turno.estado,
+        historialEstados: turno.historialEstados,
+        costo: cambios.costo ?? turno.costo,
+      });
+
+      const turnosDelMedico = turnoRepository
+        .findByMedicoId(turno.medico.id)
+        .filter(t => t.id !== turno.id);
+
+      const estaDisponible = agenda.estaDisponible(
+        turnoActualizadoTemporal,
+        turnosDelMedico
+      );
+
+      if (!estaDisponible) {
+        throw new TurnoNoDisponibleError();
+      }
+
+      turno.fechaHora = nuevaFechaHora;
+    }
+
+    if (cambios.sede !== undefined) {
+      turno.sede = cambios.sede;
+    }
+
+    if (cambios.especialidad !== undefined) {
+      turno.especialidad = cambios.especialidad;
+      turno.duracionTurno = cambios.especialidad.duracionTurnoEnMins;
+    }
+
+    if (cambios.costo !== undefined) {
+      if (typeof cambios.costo !== 'number' || cambios.costo < 0) {
+        throw new TurnoInvalidoError('El costo debe ser un número mayor o igual a cero');
+      }
+
+      turno.costo = cambios.costo;
+    }
+
+    return turnoRepository.save(turno);
+  }
+
+  darDeBajaTurno(turnoId, usuario, motivo) { //Dar de baja, no es DELETE, es actualizar estado
+    const turno = turnoRepository.findById(turnoId);
+
+    if (!turno) {
+      throw new TurnoNotFoundError(turnoId);
+    }
+
+    if (!faltaMasDeUnaHora(turno.fechaHora)) {
+      throw new TurnoBajaFueraDeTiempoError();
+    }
+
+    turno.actualizarEstado(
+      EstadoTurno.CANCELADO,
+      usuario,
+      motivo
+    );
+
+    return turnoRepository.save(turno);
+  }
+
+  eliminarTurno(turnoId) {
+    const turno = turnoRepository.findById(turnoId);
+
+    if (!turno) {
+      throw new TurnoNotFoundError(turnoId);
+    }
+
+    if (!faltaMasDeUnaHora(turno.fechaHora)) { //Por las dudas le dejo la misma restricción que para dar de baja
+      throw new TurnoBajaFueraDeTiempoError();
+    }
+
+    turnoRepository.deleteById(turnoId);
   }
 }
