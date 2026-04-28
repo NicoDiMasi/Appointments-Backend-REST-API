@@ -4,17 +4,17 @@ import { CambioEstadoTurno } from './CambioEstadoTurno.js';
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
 export class Turno {
-    constructor({ id, medico, paciente, fechaHora, sede, especialidad, estado, historialEstados, costo }) {
+    constructor({ id, medico, paciente, fechaHora, sede, practica, estado, historialEstados, costo }) {
         this.id = id;
         this.medico = medico;
         this.paciente = paciente;
         this.fechaHora = fechaHora;
         this.sede = sede;
-        this.especialidad = especialidad;
+        this.practica = practica;
         this.estado = estado;
         this.historialEstados = historialEstados ?? [];
         this.costo = costo;
-        this.duracionTurno = especialidad.duracionTurnoEnMins
+        this.duracionTurno = practica.duracionTurnoEnMins;
     }
 
 
@@ -47,13 +47,13 @@ export class Turno {
         if (!medico) {
             throw new Error('El médico del turno es obligatorio');
         }
-        if (!paciente) {
+        if (estado !== EstadoTurno.DISPONIBLE && !paciente) { //Actualizo lògica porque sino no puedo crear un turno sin paciente
             throw new Error('El paciente del turno es obligatorio');
         }
         if (!(fechaHora instanceof Date) || Number.isNaN(fechaHora.getTime())) {
             throw new Error('fechaHora debe ser una fecha válida');
         }
-        if (!sede) {
+        if (estado !== EstadoTurno.DISPONIBLE && !sede) {
             throw new Error('La sede del turno es obligatoria');
         }
         if (!practica) {
