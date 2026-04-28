@@ -311,56 +311,41 @@ feature/turnos
 main
 ```
 
-### Ramas remotas
+### Ramas principales
 
-```text
-origin/Entrega-1
-origin/feature/actualizar-disponibilidad-medico
-origin/feature/crear-disponibilidad-medico
-origin/feature/eliminar-disponibilidad-medico
-origin/feature/listar-disponibilidades-medico
-origin/feature/setup-health
-origin/feature/turnos
-origin/main
-origin/rescate-turnos
-```
+- `main`: rama principal del proyecto.
+- `feature/setup-health`: configuración inicial del servidor Express y endpoint `/health`.
+- `feature/crear-disponibilidad-medico`: creación de entidades, repositorio y servicio para disponibilidades médicas.
+- `feature/listar-disponibilidades-medico`: funcionalidad para listar disponibilidades de un médico.
+- `feature/actualizar-disponibilidad-medico`: funcionalidad para actualizar disponibilidades médicas.
+- `feature/eliminar-disponibilidad-medico`: funcionalidad para eliminar disponibilidades médicas.
+- `feature/turnos`: desarrollo del módulo de turnos, incluyendo dominio, repositorio, servicio, controller y tests.
+- `rescate-turnos`: rama auxiliar utilizada para recuperar e integrar lógica relacionada con generación de turnos.
+- `Entrega-1`: rama de integración final utilizada para consolidar las funcionalidades desarrolladas.
 
----
-
-## Grafico simplificado del flujo de ramas
+### Diagrama simplificado
 
 ```text
 main
 │
 ├── feature/setup-health
-│       └── estructura base del proyecto y endpoint /health
+│   └── merge a main
 │
 ├── feature/crear-disponibilidad-medico
-│       └── entidades, repository y service para crear disponibilidades
-│
 ├── feature/listar-disponibilidades-medico
-│       └── metodo para listar disponibilidades
-│
 ├── feature/actualizar-disponibilidad-medico
-│       └── metodo para actualizar disponibilidades
-│
 ├── feature/eliminar-disponibilidad-medico
-│       └── metodo para eliminar disponibilidades y colecciones Postman
 │
 ├── feature/turnos
-│       ├── dominio de turnos y agenda
-│       ├── repository de turnos
-│       ├── service de turnos
-│       ├── controller de turnos
-│       ├── tests de TurnoService
-│       └── merge de origin/rescate-turnos
+│   ├── rescate-turnos
+│   └── TurnoService.test
 │
 └── Entrega-1
-        ├── merge de medicos
-        ├── merge de turnos
-        └── ajustes en app.js
+    ├── merge de funcionalidades de médicos
+    ├── merge de feature/turnos
+    ├── conexión del router de turnos en app.js
+    └── actualización del README
 ```
-
 ---
 
 ## Historial relevante
@@ -368,15 +353,23 @@ main
 Del historial de Git se destacan los siguientes commits:
 
 ```text
-cbeab34 Modifico app.js con el router de Turno
-fde887b Merge turnos and medicos into Entrega-1
-15c27aa TurnoService.test
-5d3fd4c Logica de Agenda generarTurnosPara y generarTurnosParaPractica + arreglos Varios
-26b484e Merge remote-tracking branch 'origin/feature/eliminar-disponibilidad-medico' into Entrega-1
-448e658 merge con feature/setup-health
-090bae7 first commit
+d179f90 configuración inicial de node + express
 e5421e4 agregada estructura base del proyecto
-d179f90 configuracion inicial de node + express
+448e658 merge con feature/setup-health
+54af886 creación de disponibilidades médicas
+d67f526 listado de disponibilidades médicas
+91b15a1 actualización de disponibilidades médicas
+50d46d7 eliminación de disponibilidades médicas
+0d73354 integración de médicos y creación inicial de turnos
+974b382 esqueleto de repository y service de turnos
+278e66c CRUD y baja de turno
+b2f6e6b TurnoRepository con mocks
+b0b11b5 merge de rescate-turnos en feature/turnos
+1aa7438 controller y métodos básicos de turnos
+15c27aa TurnoService.test
+fde887b merge de turnos y médicos en Entrega-1
+cbeab34 modificación de app.js con router de Turno
+8429caf actualización del README
 ```
 
 ---
