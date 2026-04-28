@@ -1,7 +1,10 @@
+import { medicoRepository } from '../../medicos/repository/MedicoRepository.js';
+import { Turno } from '../domain/Turno.js';
+import { EstadoTurno } from '../domain/EstadoTurno.js';
 
 export class TurnoRepository {
   constructor() {
-    this.turnos = [];
+    this.turnos = this._initMockData();
   }
 
   findAll() {
