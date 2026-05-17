@@ -3,18 +3,14 @@ import { MedicoController } from './controller/MedicoController.js';
 
 const router = Router();
 
-router.get('/:medicoId/disponibilidades', MedicoController.listarDisponibilidades);
+router
+  .route('/:medicoId/disponibilidades')
+  .get(MedicoController.listarDisponibilidades)
+  .post(MedicoController.agregarDisponibilidad);
 
-router.post('/:medicoId/disponibilidades', MedicoController.agregarDisponibilidad);
-
-router.patch(
-    '/:medicoId/disponibilidades/:diaSemana',
-    MedicoController.actualizarDisponibilidad
-);
-
-router.delete(
-    '/:medicoId/disponibilidades/:diaSemana',
-    MedicoController.eliminarDisponibilidad
-);
+router
+  .route('/:medicoId/disponibilidades/:diaSemana')
+  .patch(MedicoController.actualizarDisponibilidad)
+  .delete(MedicoController.eliminarDisponibilidad);
 
 export default router;

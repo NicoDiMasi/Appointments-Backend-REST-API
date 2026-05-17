@@ -15,7 +15,7 @@ turnoRouter
   .delete((req, res) => turnoController.delete(req, res));
 
 turnoRouter
-  .route('/:id/baja')
-  .patch((req, res) => turnoController.darDeBaja(req, res));
+  .route('/:id/cancelaciones')
+  .post((req, res) => turnoController.darDeBaja(req, res)); //Cambio el PATCH
 
 export default turnoRouter;

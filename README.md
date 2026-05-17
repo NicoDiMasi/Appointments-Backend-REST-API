@@ -146,12 +146,12 @@ Rutas definidas en el router de turnos:
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
-| GET | `/turno` | Lista todos los turnos |
-| POST | `/turno` | Crea un nuevo turno |
-| GET | `/turno/:id` | Busca un turno por ID |
-| PATCH | `/turno/:id` | Actualiza un turno existente |
-| PATCH | `/turno/:id/baja` | Da de baja un turno |
-| DELETE | `/turno/:id` | Elimina un turno |
+| GET | `/turnos` | Lista todos los turnos |
+| POST | `/turnos` | Crea un nuevo turno |
+| GET | `/turnos/:id` | Busca un turno por ID |
+| PATCH | `/turnos/:id` | Actualiza un turno existente |
+| POST | `/turnos/:id/cancelaciones` | Registra la cancelacion de un turno |
+| DELETE | `/turnos/:id` | Elimina un turno |
 
 
 ---

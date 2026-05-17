@@ -1,13 +1,8 @@
-import express from "express"
-import turnoRouter from "./turnoRouter.js"
+import express from 'express';
+import turnoRouter from './turnoRouter.js';
 
-const router = express.Router()
+const router = express.Router();
 
-// Configuración de paths bases para cada recurso
+router.use('/turnos', turnoRouter);
 
-router.use('/turno', turnoRouter)
-
-//router.use('/medico', medicoRouter)
-
-
-export default router
+export default router;
