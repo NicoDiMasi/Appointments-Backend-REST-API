@@ -1,16 +1,8 @@
 import { MedicoService } from '../service/MedicoService.js';
 
-function handleError(error, res) {
-    const statusCode = error.statusCode ?? 500;
-
-    res.status(statusCode).json({
-        error: error.name ?? 'InternalServerError',
-        message: error.message ?? 'Error interno del servidor',
-    });
-}
 
 export const MedicoController = {
-    listarDisponibilidades(req, res) {
+    listarDisponibilidades(req, res, next) {
         try {
             const { medicoId } = req.params;
 
@@ -18,11 +10,11 @@ export const MedicoController = {
 
             res.status(200).json(disponibilidades);
         } catch (error) {
-            handleError(error, res);
+            next(error);
         }
     },
 
-    agregarDisponibilidad(req, res) {
+    agregarDisponibilidad(req, res, next) {
         try {
             const { medicoId } = req.params;
 
@@ -30,11 +22,11 @@ export const MedicoController = {
 
             res.status(201).json(disponibilidad);
         } catch (error) {
-            handleError(error, res);
+            next(error);
         }
     },
 
-    actualizarDisponibilidad(req, res) {
+    actualizarDisponibilidad(req, res, next) {
         try {
             const { medicoId, diaSemana } = req.params;
 
@@ -46,11 +38,11 @@ export const MedicoController = {
 
             res.status(200).json(disponibilidad);
         } catch (error) {
-            handleError(error, res);
+            next(error);
         }
     },
 
-    eliminarDisponibilidad(req, res) {
+    eliminarDisponibilidad(req, res, next) {
         try {
             const { medicoId, diaSemana } = req.params;
 
@@ -58,7 +50,7 @@ export const MedicoController = {
 
             res.status(204).send();
         } catch (error) {
-            handleError(error, res);
+            next(error);
         }
     },
 };

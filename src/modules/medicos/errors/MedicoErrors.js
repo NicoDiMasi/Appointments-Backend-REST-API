@@ -1,23 +1,20 @@
-export class MedicoNotFoundError extends Error {
+import { AppError } from "../../../errors/AppError.js";
+
+
+export class MedicoNotFoundError extends AppError {
   constructor(medicoId) {
-    super(`Médico con id '${medicoId}' no encontrado`);
-    this.name = 'MedicoNotFoundError';
-    this.statusCode = 404;
+    super(`Médico con id '${medicoId}' no encontrado`,404);
   }
 }
 
-export class DisponibilidadNotFoundError extends Error {
+export class DisponibilidadNotFoundError extends AppError {
   constructor(diaSemana) {
-    super(`No existe disponibilidad para el día '${diaSemana}'`);
-    this.name = 'DisponibilidadNotFoundError';
-    this.statusCode = 404;
+    super(`No existe disponibilidad para el día '${diaSemana}'`, 404);
   }
 }
 
-export class DisponibilidadInvalidaError extends Error {
+export class DisponibilidadInvalidaError extends AppError {
   constructor(mensaje) {
-    super(mensaje);
-    this.name = 'DisponibilidadInvalidaError';
-    this.statusCode = 400;
+    super(mensaje, 400);
   }
 }

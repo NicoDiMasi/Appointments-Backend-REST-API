@@ -6,27 +6,27 @@ export class TurnoController {
     this.turnoService = turnoService;
   }
 
-  findAll(req, res) {
+  findAll(req, res, next) {
     try {
       const turnos = this.turnoService.findAll();
 
       return res.status(200).json(turnos);
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  findById(req, res) {
+  findById(req, res, next) {
     try {
       const turno = this.turnoService.findById(req.params.id);
 
       return res.status(200).json(turno);
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  create(req, res) {
+  create(req, res, next) {
     try {
       const datosTurno = {
         ...req.body,
@@ -36,11 +36,11 @@ export class TurnoController {
       
       return res.status(201).json(turnoCreado);
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  update(req, res) {
+  update(req, res, next) {
     try {
       const turnoActualizado = this.turnoService.actualizarTurno(
         req.params.id,
@@ -49,11 +49,11 @@ export class TurnoController {
 
       return res.status(200).json(turnoActualizado);
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  darDeBaja(req, res) {
+  darDeBaja(req, res, next) {
     try {
       const usuario = req.body.usuario ?? {
         id: 'sistema',
@@ -70,26 +70,21 @@ export class TurnoController {
 
       return res.status(200).json(turnoCancelado);
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  delete(req, res) {
+  delete(req, res, next) {
     try {
       this.turnoService.eliminarTurno(req.params.id);
 
       return res.status(204).send();
     } catch (error) {
-      return this.handleError(res, error);
+      return next(error);
     }
   }
 
-  handleError(res, error) {
-    return res.status(error.statusCode ?? 500).json({
-      error: error.name ?? 'Error',
-      message: error.message ?? 'Error interno del servidor',
-    });
-  }
+  
 }
 
 export const turnoController = new TurnoController();
