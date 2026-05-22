@@ -1,4 +1,4 @@
-# Sweet Medical
+# Sweet Medical 
 
 Plataforma web de gestion de turnos medicos desarrollada con Node.js y Express.
 
