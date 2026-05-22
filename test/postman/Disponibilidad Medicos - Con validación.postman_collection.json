@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "b63ada71-afdf-4efe-9471-856e70ae880c",
+    "name": "Disponibilidad Medicos - Con validación",
+    "description": "Tests de Postman para endpoints de disponibilidad de medicos. Ejecutar con el servidor levantado en localhost:3000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54359622",
+    "_collection_link": "https://go.postman.co/collection/54359622-b63ada71-afdf-4efe-9471-856e70ae880c?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.test('Devuelve status UP', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('UP');",
+              "  pm.expect(body).to.have.property('timestamp');",
+              "  pm.expect(body).to.have.property('uptime');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar disponibilidades de medico existente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.test('Devuelve una lista de disponibilidades', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "  pm.expect(body.length).to.be.greaterThan(0);",
+              "  body.forEach((disponibilidad) => {",
+              "    pm.expect(disponibilidad).to.have.property('diaSemana');",
+              "    pm.expect(disponibilidad).to.have.property('horaDesde');",
+              "    pm.expect(disponibilidad).to.have.property('horaHasta');",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar disponibilidades de medico inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404 Not Found', function () { pm.response.to.have.status(404); });",
+              "pm.test('Devuelve error MedicoNotFoundError', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('MedicoNotFoundError');",
+              "  pm.expect(body.message).to.include('no encontrado');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/med-inexistente/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "med-inexistente",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Agregar disponibilidad valida",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', function () { pm.response.to.have.status(201); });",
+              "pm.test('Devuelve la disponibilidad creada', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.eql({ diaSemana: 'MARTES', horaDesde: '10:00', horaHasta: '13:00' });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"MARTES\",\n  \"horaDesde\": \"10:00\",\n  \"horaHasta\": \"13:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Rechazar disponibilidad duplicada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "pm.test('Devuelve error DisponibilidadInvalidaError', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('DisponibilidadInvalidaError');",
+              "  pm.expect(body.message).to.include('Ya existe una disponibilidad');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"LUNES\",\n  \"horaDesde\": \"15:00\",\n  \"horaHasta\": \"18:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Rechazar disponibilidad con horarios invalidos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "pm.test('Devuelve error por horaDesde posterior a horaHasta', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('DisponibilidadInvalidaError');",
+              "  pm.expect(body.message).to.eql('horaDesde debe ser anterior a horaHasta');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diaSemana\": \"JUEVES\",\n  \"horaDesde\": \"14:00\",\n  \"horaHasta\": \"10:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar disponibilidad existente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.test('Devuelve la disponibilidad actualizada', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.eql({ diaSemana: 'LUNES', horaDesde: '09:00', horaHasta: '12:30' });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"horaDesde\": \"09:00\",\n  \"horaHasta\": \"12:30\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/LUNES",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "LUNES"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar disponibilidad inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404 Not Found', function () { pm.response.to.have.status(404); });",
+              "pm.test('Devuelve error DisponibilidadNotFoundError', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.error).to.eql('DisponibilidadNotFoundError');",
+              "  pm.expect(body.message).to.include('No existe disponibilidad');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"horaDesde\": \"09:00\",\n  \"horaHasta\": \"12:30\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/DOMINGO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "DOMINGO"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar disponibilidad creada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204 No Content', function () { pm.response.to.have.status(204); });",
+              "pm.test('No devuelve body', function () { pm.expect(pm.response.text()).to.eql(''); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/medicos/{{medicoId}}/disponibilidades/MARTES",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "medicos",
+            "{{medicoId}}",
+            "disponibilidades",
+            "MARTES"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "medicoId",
+      "value": "med-001",
+      "type": "string"
+    }
+  ]
+}

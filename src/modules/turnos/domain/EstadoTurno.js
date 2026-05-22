@@ -1,0 +1,7 @@
+export const EstadoTurno = Object.freeze({
+  DISPONIBLE: 'DISPONIBLE',
+  RESERVADO: 'RESERVADO',
+  CONFIRMADO: 'CONFIRMADO',
+  CANCELADO: 'CANCELADO',
+  REALIZADO: 'REALIZADO',
+});

@@ -1,0 +1,9 @@
+# Use this workspace to collaborate
+workspace:
+  id: 51e7f88c-15a2-41eb-806c-ebf945671834
+
+localResources:
+  collections:
+    - ..\test\postman\Disponibilidad Medicos - Con
+      validación.postman_collection.json
+    - ..\test\postman\Disponibilidad Medicos.postman_collection.json

@@ -1,0 +1,95 @@
+import { TurnoService } from '../service/TurnoService.js';
+import { turnoRepository } from '../repository/TurnoRepository.js';
+import { EstadoTurno } from '../domain/EstadoTurno.js';
+
+export class TurnoController {
+  constructor(turnoService = new TurnoService(turnoRepository)) {
+    this.turnoService = turnoService;
+  }
+
+  findAll(req, res, next) {
+    try {
+      const turnos = this.turnoService.findAll();
+
+      return res.status(200).json(turnos);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  findById(req, res, next) {
+    try {
+      const turno = this.turnoService.findById(req.params.id);
+
+      return res.status(200).json(turno);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  create(req, res, next) {
+    try {
+      const datosTurno = {
+        ...req.body,
+        fechaHora: new Date(req.body.fechaHora),
+      };
+      const turnoCreado = this.turnoService.crearTurno(datosTurno);
+      
+      return res.status(201).json(turnoCreado);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  update(req, res, next) {
+    try {
+      if (req.body.estado === EstadoTurno.CANCELADO) {
+        return this.darDeBaja(req, res, next);
+      }
+
+      const turnoActualizado = this.turnoService.actualizarTurno(
+        req.params.id,
+        req.body
+      );
+
+      return res.status(200).json(turnoActualizado);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  darDeBaja(req, res, next) {
+    try {
+      const usuario = req.body.usuario ?? {
+        id: 'sistema',
+        nombre: 'Sistema',
+      };
+
+      const motivo = req.body.motivo ?? 'Baja de turno';
+
+      const turnoCancelado = this.turnoService.darDeBajaTurno(
+        req.params.id,
+        usuario,
+        motivo
+      );
+
+      return res.status(200).json(turnoCancelado);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  delete(req, res, next) {
+    try {
+      this.turnoService.eliminarTurno(req.params.id);
+
+      return res.status(204).send();
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  
+}
+
+export const turnoController = new TurnoController();
