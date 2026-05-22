@@ -149,8 +149,7 @@ Rutas definidas en el router de turnos:
 | GET | `/turnos` | Lista todos los turnos |
 | POST | `/turnos` | Crea un nuevo turno |
 | GET | `/turnos/:id` | Busca un turno por ID |
-| PATCH | `/turnos/:id` | Actualiza un turno existente |
-| POST | `/turnos/:id/cancelaciones` | Registra la cancelacion de un turno |
+| PATCH | `/turnos/:id` | Actualiza un turno existente. Para cancelarlo, enviar `estado: "CANCELADO"` |
 | DELETE | `/turnos/:id` | Elimina un turno |
 
 
@@ -187,10 +186,10 @@ Rutas definidas en el router de turnos:
 │       │   └── medicos.router.js
 │       │
 │       ├── routes/
-│       │   ├── router.js
-│       │   └── turnoRouter.js
+│       │   └── router.js
 │       │
 │       └── turnos/
+│           ├── turno.router.js
 │           ├── controller/
 │           │   └── turnoController.js
 │           ├── domain/
@@ -373,3 +372,183 @@ cbeab34 modificación de app.js con router de Turno
 ```
 
 ---
+
+## Guia rapida para probar la API
+
+Para levantar el servidor:
+
+```bash
+npm run dev
+```
+
+La API queda disponible en:
+
+```text
+http://localhost:3000
+```
+
+### Datos cargados
+
+Medicos cargados en memoria:
+
+| ID | Nombre | Especialidades | Disponibilidades |
+|----|--------|----------------|------------------|
+| `med-001` | Ana Gomez | Cardiologia, Clinica Medica | LUNES 08:00-12:00, MIERCOLES 14:00-18:00, VIERNES 09:00-13:00 |
+| `med-002` | Carlos Perez | Neurologia | MARTES 07:00-11:00, JUEVES 15:00-19:00, SABADO 08:00-12:00 |
+| `med-003` | Laura Martinez | Pediatria | LUNES 10:00-14:00, MIERCOLES 16:00-20:00, VIERNES 08:30-12:30 |
+
+Turnos cargados en memoria:
+
+| ID | Medico | Estado | Horario |
+|----|--------|--------|---------|
+| `tur-001` | `med-001` | DISPONIBLE | Proximo LUNES 08:30 |
+| `tur-002` | `med-002` | CONFIRMADO | Proximo MARTES 08:00 |
+| `tur-003` | `med-003` | DISPONIBLE | Proximo VIERNES 09:00 |
+
+Las fechas de los turnos mock se calculan automaticamente hacia la proxima ocurrencia de ese dia de la semana.
+
+### Health check
+
+```bash
+curl http://localhost:3000/health
+```
+
+### Turnos
+
+Listar turnos:
+
+```bash
+curl http://localhost:3000/turnos
+```
+
+Buscar un turno por ID:
+
+```bash
+curl http://localhost:3000/turnos/tur-001
+```
+
+Dar de alta un turno:
+
+```bash
+curl -X POST http://localhost:3000/turnos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "tur-004",
+    "medico": {
+      "id": "med-001",
+      "matricula": "MP-1234",
+      "nombre": "Ana Gomez",
+      "especialidades": [
+        {
+          "id": "esp-001",
+          "nombre": "Cardiologia",
+          "duracionTurnoEnMins": 30,
+          "costoConsulta": 5000
+        }
+      ],
+      "disponibilidades": [
+        { "diaSemana": "LUNES", "horaDesde": "08:00", "horaHasta": "12:00" },
+        { "diaSemana": "MIERCOLES", "horaDesde": "14:00", "horaHasta": "18:00" },
+        { "diaSemana": "VIERNES", "horaDesde": "09:00", "horaHasta": "13:00" }
+      ]
+    },
+    "paciente": {
+      "id": "pac-004",
+      "nombre": "Paciente Demo",
+      "dni": "30123456"
+    },
+    "fechaHora": "2026-05-25T09:30:00.000-03:00",
+    "sede": {
+      "id": "sede-001",
+      "nombre": "Sede Central",
+      "direccion": "Av. Siempre Viva 123"
+    },
+    "especialidad": {
+      "id": "esp-001",
+      "nombre": "Cardiologia",
+      "duracionTurnoEnMins": 30,
+      "costoConsulta": 5000
+    },
+    "practica": null,
+    "estado": "CONFIRMADO",
+    "historialEstados": [],
+    "costo": 5000
+  }'
+```
+
+El alta valida que el medico tenga disponibilidad para ese dia y horario, y que no haya otro turno superpuesto para el mismo medico. Si se usa este ejemplo despues del 25 de mayo de 2026, cambiar `fechaHora` por un lunes futuro dentro del rango 08:00-12:00.
+
+Actualizar un turno:
+
+```bash
+curl -X PATCH http://localhost:3000/turnos/tur-001 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fechaHora": "2026-05-25T10:30:00.000-03:00",
+    "costo": 6500
+  }'
+```
+
+Dar de baja un turno:
+
+```bash
+curl -X PATCH http://localhost:3000/turnos/tur-001 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "estado": "CANCELADO",
+    "usuario": {
+      "id": "usr-001",
+      "nombre": "Recepcionista"
+    },
+    "motivo": "El paciente cancelo el turno"
+  }'
+```
+
+La baja solo se permite hasta una hora antes del horario del turno.
+
+Eliminar un turno:
+
+```bash
+curl -X DELETE http://localhost:3000/turnos/tur-001
+```
+
+### Medicos y disponibilidades
+
+Actualmente no hay endpoint para crear, listar, actualizar o eliminar medicos completos. Lo implementado para medicos es la administracion de sus disponibilidades horarias.
+
+Listar disponibilidades de un medico:
+
+```bash
+curl http://localhost:3000/medicos/med-001/disponibilidades
+```
+
+Agregar disponibilidad:
+
+```bash
+curl -X POST http://localhost:3000/medicos/med-001/disponibilidades \
+  -H "Content-Type: application/json" \
+  -d '{
+    "diaSemana": "MARTES",
+    "horaDesde": "13:00",
+    "horaHasta": "16:00"
+  }'
+```
+
+Actualizar disponibilidad:
+
+```bash
+curl -X PATCH http://localhost:3000/medicos/med-001/disponibilidades/MARTES \
+  -H "Content-Type: application/json" \
+  -d '{
+    "horaDesde": "14:00",
+    "horaHasta": "17:00"
+  }'
+```
+
+Eliminar disponibilidad:
+
+```bash
+curl -X DELETE http://localhost:3000/medicos/med-001/disponibilidades/MARTES
+```
+
+Los dias validos son `DOMINGO`, `LUNES`, `MARTES`, `MIERCOLES`, `JUEVES`, `VIERNES` y `SABADO`.

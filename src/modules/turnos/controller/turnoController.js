@@ -1,5 +1,6 @@
 import { TurnoService } from '../service/TurnoService.js';
 import { turnoRepository } from '../repository/TurnoRepository.js';
+import { EstadoTurno } from '../domain/EstadoTurno.js';
 
 export class TurnoController {
   constructor(turnoService = new TurnoService(turnoRepository)) {
@@ -42,6 +43,10 @@ export class TurnoController {
 
   update(req, res, next) {
     try {
+      if (req.body.estado === EstadoTurno.CANCELADO) {
+        return this.darDeBaja(req, res, next);
+      }
+
       const turnoActualizado = this.turnoService.actualizarTurno(
         req.params.id,
         req.body
