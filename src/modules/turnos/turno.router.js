@@ -9,6 +9,10 @@ router
   .post((req, res, next) => turnoController.create(req, res, next));
 
 router
+  .route('/disponibilidad')
+  .get((req, res, next) => turnoController.consultarDisponibilidad(req, res, next));
+
+router
   .route('/:id')
   .get((req, res, next) => turnoController.findById(req, res, next))
   .patch((req, res, next) => turnoController.update(req, res, next)) 

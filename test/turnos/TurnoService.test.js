@@ -162,7 +162,7 @@ describe('TurnoService', () => {
 
         expect(() => {
             turnoService.crearTurno(datosTurno);
-        }).toThrow('El médico no está disponible en ese horario');
+        }).toThrow('El médico no tiene disponibilidad para la fecha y horario solicitados');
     });
 
     test('debería rechazar un turno superpuesto con otro turno del mismo médico', () => {
@@ -180,7 +180,27 @@ describe('TurnoService', () => {
 
         expect(() => {
             turnoService.crearTurno(datosTurnoSuperpuesto);
-        }).toThrow('El médico no está disponible en ese horario');
+        }).toThrow('El médico no tiene disponibilidad para la fecha y horario solicitados');
+    });
+
+    test('debería consultar disponibilidad y reportar turnos cercanos', () => {
+        const turnoExistente = crearTurno({
+            id: 'tur-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:00'),
+        });
+
+        turnoRepository.save(turnoExistente);
+
+        const resultado = turnoService.consultarDisponibilidad({
+            medicoId: 'med-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:20').toISOString(),
+            especialidadId: 'esp-001',
+        });
+
+        expect(resultado.disponible).toBe(false);
+        expect(resultado.turnosCercanos).toHaveLength(1);
+        expect(resultado.turnosCercanos[0].id).toBe('tur-001');
+        expect(resultado.turnosCercanos[0].seSuperpone).toBe(true);
     });
 
     test('debería actualizar un turno existente', () => {

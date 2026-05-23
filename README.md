@@ -147,6 +147,7 @@ Rutas definidas en el router de turnos:
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | GET | `/turnos` | Lista todos los turnos |
+| GET | `/turnos/disponibilidad` | Consulta si un horario esta disponible e informa turnos cercanos |
 | POST | `/turnos` | Crea un nuevo turno |
 | GET | `/turnos/:id` | Busca un turno por ID |
 | PATCH | `/turnos/:id` | Actualiza un turno existente. Para cancelarlo, enviar `estado: "CANCELADO"` |
@@ -481,6 +482,14 @@ Buscar un turno por ID:
 ```bash
 curl http://localhost:3000/turnos/tur-001
 ```
+
+Consultar disponibilidad de un medico para un horario:
+
+```bash
+curl "http://localhost:3000/turnos/disponibilidad?medicoId=med-001&fechaHora=2026-05-25T09:20:00.000-03:00&especialidadId=esp-001"
+```
+
+La respuesta indica si el horario esta disponible, cuantos modulos requiere la prestacion y que turnos cercanos existen para ese medico.
 
 Dar de alta un turno:
 

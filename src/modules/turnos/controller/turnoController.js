@@ -27,6 +27,16 @@ export class TurnoController {
     }
   }
 
+  consultarDisponibilidad(req, res, next) {
+    try {
+      const disponibilidad = this.turnoService.consultarDisponibilidad(req.query);
+
+      return res.status(200).json(disponibilidad);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   create(req, res, next) {
     try {
       const datosTurno = {

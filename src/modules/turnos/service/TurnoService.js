@@ -2,6 +2,8 @@ import { Turno } from '../domain/Turno.js';
 import { Agenda } from '../domain/Agenda.js';
 import { EstadoTurno } from '../domain/EstadoTurno.js';
 import { TurnoRepository } from '../repository/TurnoRepository.js';
+import { medicoRepository } from '../../medicos/repository/MedicoRepository.js';
+import { MedicoNotFoundError } from '../../medicos/errors/MedicoErrors.js';
 import {
     calcularCantidadModulos,
     calcularDuracionModular,
@@ -22,8 +24,9 @@ function faltaMasDeUnaHora(fechaHoraTurno) { //Para la cancelación del turno
 }
 export class TurnoService {
 
-    constructor(turnoRepository) {
+    constructor(turnoRepository, medicosRepository = medicoRepository) {
         this.turnoRepository = turnoRepository; 
+        this.medicoRepository = medicosRepository;
         this.agenda = new Agenda();
     }
 
@@ -42,7 +45,16 @@ export class TurnoService {
     }
 
     crearTurno(datosTurno) {
-        const turnoNuevo = Turno.create(datosTurno);
+        const medico = this.medicoRepository.findById(datosTurno.medico?.id);
+
+        if (!medico) {
+            throw new MedicoNotFoundError(datosTurno.medico?.id);
+        }
+
+        const turnoNuevo = Turno.create({
+            ...datosTurno,
+            medico,
+        });
 
         const turnosDelMedico = this.turnoRepository.findByMedicoId(
             turnoNuevo.medico.id
@@ -52,11 +64,100 @@ export class TurnoService {
         const estaDisponible = this.agenda.estaDisponible(turnoNuevo,turnosDelMedico);
 
         if (!estaDisponible) {
-            throw new Error("El médico no está disponible en ese horario");
+            throw new TurnoNoDisponibleError();
         }
 
         return this.turnoRepository.save(turnoNuevo);
     };
+
+    consultarDisponibilidad({ medicoId, fechaHora, duracionTurnoEnMins, especialidadId, ventanaMinutos = 60 }) {
+        const medico = this.medicoRepository.findById(medicoId);
+
+        if (!medico) {
+            throw new MedicoNotFoundError(medicoId);
+        }
+
+        const fechaHoraSolicitada = new Date(fechaHora);
+
+        if (Number.isNaN(fechaHoraSolicitada.getTime())) {
+            throw new TurnoInvalidoError('La fecha y hora del turno no es válida');
+        }
+
+        const especialidad = especialidadId
+            ? medico.especialidades.find(e => e.id === especialidadId)
+            : null;
+
+        if (especialidadId && !especialidad) {
+            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${especialidadId}'`);
+        }
+
+        const duracionPrestacion = especialidad?.duracionTurnoEnMins ?? Number(duracionTurnoEnMins);
+
+        if (!Number.isInteger(duracionPrestacion) || duracionPrestacion <= 0) {
+            throw new TurnoInvalidoError('La duración del turno debe ser un entero positivo');
+        }
+
+        const prestacion = especialidad ?? {
+            id: 'prestacion-consultada',
+            nombre: 'Prestación consultada',
+            duracionTurnoEnMins: duracionPrestacion,
+        };
+
+        const turnoSolicitado = Turno.create({
+            id: 'turno-consultado',
+            medico,
+            paciente: null,
+            fechaHora: fechaHoraSolicitada,
+            sede: null,
+            especialidad: prestacion,
+            estado: EstadoTurno.DISPONIBLE,
+            historialEstados: [],
+            costo: 0,
+        });
+
+        const ventana = Number(ventanaMinutos);
+
+        if (!Number.isInteger(ventana) || ventana <= 0) {
+            throw new TurnoInvalidoError('La ventana de búsqueda debe ser un entero positivo');
+        }
+
+        const turnosDelMedico = this.turnoRepository.findByMedicoId(medicoId);
+        const disponible = this.agenda.estaDisponible(turnoSolicitado, turnosDelMedico);
+
+        return {
+            disponible,
+            medicoId,
+            fechaHora: fechaHoraSolicitada.toISOString(),
+            duracionPrestacion,
+            duracionTurno: turnoSolicitado.duracionTurno,
+            modulosRequeridos: turnoSolicitado.modulosRequeridos,
+            turnosCercanos: this.buscarTurnosCercanos(
+                turnoSolicitado,
+                turnosDelMedico,
+                ventana
+            ),
+        };
+    }
+
+    buscarTurnosCercanos(turnoSolicitado, turnosDelMedico, ventanaMinutos) {
+        const ventanaEnMs = ventanaMinutos * 60 * 1000;
+        const inicioSolicitado = turnoSolicitado.fechaHora.getTime();
+
+        return turnosDelMedico
+            .filter(turno => turno.fechaHora.toDateString() === turnoSolicitado.fechaHora.toDateString())
+            .filter(turno => {
+                const diferencia = Math.abs(turno.fechaHora.getTime() - inicioSolicitado);
+
+                return diferencia <= ventanaEnMs || this.agenda.seSuperponen(turnoSolicitado, turno);
+            })
+            .map(turno => ({
+                id: turno.id,
+                estado: turno.estado,
+                fechaHora: turno.fechaHora.toISOString(),
+                duracionTurno: turno.duracionTurno,
+                seSuperpone: this.agenda.seSuperponen(turnoSolicitado, turno),
+            }));
+    }
 
     actualizarTurno(turnoId, cambios) {
         const turno = this.turnoRepository.findById(turnoId);
