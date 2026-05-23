@@ -203,6 +203,88 @@ describe('TurnoService', () => {
         expect(resultado.turnosCercanos[0].seSuperpone).toBe(true);
     });
 
+    test('debería solicitar un turno y devolver la evaluación de disponibilidad', () => {
+        const turnoCercano = crearTurno({
+            id: 'tur-cercano-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:00'),
+        });
+
+        turnoRepository.save(turnoCercano);
+
+        const resultado = turnoService.solicitarTurno(crearDatosTurno({
+            id: 'tur-002',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:00'),
+        }));
+
+        expect(resultado.turno.id).toBe('tur-002');
+        expect(resultado.disponibilidad.disponible).toBe(true);
+        expect(resultado.disponibilidad.turnosCercanos).toHaveLength(1);
+        expect(resultado.disponibilidad.turnosCercanos[0].id).toBe('tur-cercano-001');
+    });
+
+    test('debería rechazar una solicitud que no inicia en un módulo de 20 minutos e informar cercanos', () => {
+        const turnoCercano = crearTurno({
+            id: 'tur-cercano-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
+        });
+
+        turnoRepository.save(turnoCercano);
+
+        try {
+            turnoService.solicitarTurno(crearDatosTurno({
+                id: 'tur-002',
+                fechaHora: proximaFechaParaDiaYHora('LUNES', '09:15'),
+            }));
+            throw new Error('Se esperaba que la solicitud falle');
+        } catch (error) {
+            expect(error.message).toBe('El médico no tiene disponibilidad para la fecha y horario solicitados');
+            expect(error.details.disponible).toBe(false);
+            expect(error.details.turnosCercanos).toHaveLength(1);
+            expect(error.details.turnosCercanos[0].id).toBe('tur-cercano-001');
+        }
+    });
+
+    test('debería generar turnos disponibles usando la disponibilidad actual del médico', () => {
+        medico.disponibilidades = [{
+            diaSemana: 'LUNES',
+            horaDesde: '09:00',
+            horaHasta: '10:00',
+        }];
+        medicoRepository.save(medico);
+
+        const turnos = turnoService.generarTurnosDisponibles({
+            medicoId: 'med-001',
+            especialidadId: 'esp-001',
+        });
+
+        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560, 580]);
+    });
+
+    test('modificar la disponibilidad no debería cambiar turnos existentes', () => {
+        const fechaPasada = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const turnoExistente = crearTurno({
+            id: 'tur-001',
+            fechaHora: fechaPasada,
+        });
+
+        turnoRepository.save(turnoExistente);
+
+        const fechaOriginal = new Date(turnoExistente.fechaHora);
+        const disponibilidadesOriginales = [...turnoExistente.medico.disponibilidades];
+
+        medico.disponibilidades = [{
+            diaSemana: 'LUNES',
+            horaDesde: '09:00',
+            horaHasta: '10:00',
+        }];
+        medicoRepository.save(medico);
+
+        const turnoGuardado = turnoService.findById('tur-001');
+
+        expect(turnoGuardado.fechaHora).toEqual(fechaOriginal);
+        expect(turnoGuardado.medico.disponibilidades).toEqual(disponibilidadesOriginales);
+    });
+
     test('debería actualizar un turno existente', () => {
         const turno = crearTurno({
             id: 'tur-001',

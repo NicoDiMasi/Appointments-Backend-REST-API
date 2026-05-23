@@ -16,16 +16,17 @@ import {
 } from '../errors/TurnoErrors.js';
 
 
-function faltaMasDeUnaHora(fechaHoraTurno) { //Para la cancelación del turno
+function faltaMasDeUnaHora(fechaHoraTurno) {
     const ahora = new Date();
     const unaHoraEnMs = 60 * 60 * 1000;
 
     return fechaHoraTurno.getTime() - ahora.getTime() >= unaHoraEnMs;
 }
+
 export class TurnoService {
 
     constructor(turnoRepository, medicosRepository = medicoRepository) {
-        this.turnoRepository = turnoRepository; 
+        this.turnoRepository = turnoRepository;
         this.medicoRepository = medicosRepository;
         this.agenda = new Agenda();
     }
@@ -33,18 +34,43 @@ export class TurnoService {
     findAll() {
       return this.turnoRepository.findAll();
     }
-    
+
     findById(turnoId) {
       const turno = this.turnoRepository.findById(turnoId);
-    
+
       if (!turno) {
         throw new TurnoNotFoundError(turnoId);
       }
-  
+
       return turno;
     }
 
     crearTurno(datosTurno) {
+        const { turnoNuevo, evaluacionDisponibilidad } = this.evaluarSolicitudTurno(datosTurno);
+
+        if (!evaluacionDisponibilidad.disponible) {
+            throw new TurnoNoDisponibleError(evaluacionDisponibilidad);
+        }
+
+        return this.turnoRepository.save(turnoNuevo);
+    }
+
+    solicitarTurno(datosTurno) {
+        const { turnoNuevo, evaluacionDisponibilidad } = this.evaluarSolicitudTurno(datosTurno);
+
+        if (!evaluacionDisponibilidad.disponible) {
+            throw new TurnoNoDisponibleError(evaluacionDisponibilidad);
+        }
+
+        const turno = this.turnoRepository.save(turnoNuevo);
+
+        return {
+            turno,
+            disponibilidad: evaluacionDisponibilidad,
+        };
+    }
+
+    evaluarSolicitudTurno(datosTurno, ventanaMinutos = datosTurno.ventanaMinutos ?? 60) {
         const medico = this.medicoRepository.findById(datosTurno.medico?.id);
 
         if (!medico) {
@@ -59,16 +85,23 @@ export class TurnoService {
         const turnosDelMedico = this.turnoRepository.findByMedicoId(
             turnoNuevo.medico.id
         );
+        const ventana = this.validarVentanaMinutos(ventanaMinutos);
+        const disponible = this.agenda.estaDisponible(turnoNuevo, turnosDelMedico);
+        const turnosCercanos = this.buscarTurnosCercanos(
+            turnoNuevo,
+            turnosDelMedico,
+            ventana
+        );
 
-
-        const estaDisponible = this.agenda.estaDisponible(turnoNuevo,turnosDelMedico);
-
-        if (!estaDisponible) {
-            throw new TurnoNoDisponibleError();
-        }
-
-        return this.turnoRepository.save(turnoNuevo);
-    };
+        return {
+            turnoNuevo,
+            evaluacionDisponibilidad: this.armarRespuestaDisponibilidad(
+                turnoNuevo,
+                disponible,
+                turnosCercanos
+            ),
+        };
+    }
 
     consultarDisponibilidad({ medicoId, fechaHora, duracionTurnoEnMins, especialidadId, ventanaMinutos = 60 }) {
         const medico = this.medicoRepository.findById(medicoId);
@@ -115,28 +148,41 @@ export class TurnoService {
             costo: 0,
         });
 
-        const ventana = Number(ventanaMinutos);
+        const ventana = this.validarVentanaMinutos(ventanaMinutos);
+        const turnosDelMedico = this.turnoRepository.findByMedicoId(medicoId);
+        const disponible = this.agenda.estaDisponible(turnoSolicitado, turnosDelMedico);
+        const turnosCercanos = this.buscarTurnosCercanos(
+            turnoSolicitado,
+            turnosDelMedico,
+            ventana
+        );
 
-        if (!Number.isInteger(ventana) || ventana <= 0) {
-            throw new TurnoInvalidoError('La ventana de búsqueda debe ser un entero positivo');
+        return this.armarRespuestaDisponibilidad(
+            turnoSolicitado,
+            disponible,
+            turnosCercanos,
+            duracionPrestacion
+        );
+    }
+
+    generarTurnosDisponibles({ medicoId, especialidadId }) {
+        const medico = this.medicoRepository.findById(medicoId);
+
+        if (!medico) {
+            throw new MedicoNotFoundError(medicoId);
+        }
+
+        const especialidad = medico.especialidades.find(e => e.id === especialidadId);
+
+        if (!especialidad) {
+            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${especialidadId}'`);
         }
 
         const turnosDelMedico = this.turnoRepository.findByMedicoId(medicoId);
-        const disponible = this.agenda.estaDisponible(turnoSolicitado, turnosDelMedico);
 
-        return {
-            disponible,
-            medicoId,
-            fechaHora: fechaHoraSolicitada.toISOString(),
-            duracionPrestacion,
-            duracionTurno: turnoSolicitado.duracionTurno,
-            modulosRequeridos: turnoSolicitado.modulosRequeridos,
-            turnosCercanos: this.buscarTurnosCercanos(
-                turnoSolicitado,
-                turnosDelMedico,
-                ventana
-            ),
-        };
+        return this.agenda
+            .generarTurnosParaEspecialidad(especialidad, medico)
+            .filter(turno => this.agenda.estaDisponible(turno, turnosDelMedico));
     }
 
     buscarTurnosCercanos(turnoSolicitado, turnosDelMedico, ventanaMinutos) {
@@ -159,6 +205,30 @@ export class TurnoService {
             }));
     }
 
+    validarVentanaMinutos(ventanaMinutos) {
+        const ventana = Number(ventanaMinutos);
+
+        if (!Number.isInteger(ventana) || ventana <= 0) {
+            throw new TurnoInvalidoError('La ventana de búsqueda debe ser un entero positivo');
+        }
+
+        return ventana;
+    }
+
+    armarRespuestaDisponibilidad(turno, disponible, turnosCercanos, duracionPrestacion = null) {
+        return {
+            disponible,
+            medicoId: turno.medico.id,
+            fechaHora: turno.fechaHora.toISOString(),
+            duracionPrestacion: duracionPrestacion ?? this.agenda.obtenerDuracionPrestacion(
+                turno.especialidad ?? turno.practica
+            ),
+            duracionTurno: turno.duracionTurno,
+            modulosRequeridos: turno.modulosRequeridos,
+            turnosCercanos,
+        };
+    }
+
     actualizarTurno(turnoId, cambios) {
         const turno = this.turnoRepository.findById(turnoId);
 
@@ -171,9 +241,10 @@ export class TurnoService {
                 throw new TurnoInvalidoError('La fecha y hora del turno no es válida');
             }
 
+            const medicoActual = this.medicoRepository.findById(turno.medico.id) ?? turno.medico;
             const turnoActualizadoTemporal = Turno.create({
                 id: turno.id,
-                medico: turno.medico,
+                medico: medicoActual,
                 paciente: turno.paciente,
                 fechaHora: nuevaFechaHora,
                 sede: cambios.sede ?? turno.sede,
@@ -188,10 +259,16 @@ export class TurnoService {
                 .findByMedicoId(turno.medico.id)
                 .filter(t => t.id !== turno.id);
 
-            const estaDisponible = this.agenda.estaDisponible(turnoActualizadoTemporal,turnosDelMedico);
+            const estaDisponible = this.agenda.estaDisponible(turnoActualizadoTemporal, turnosDelMedico);
 
             if (!estaDisponible) {
-                throw new TurnoNoDisponibleError();
+                throw new TurnoNoDisponibleError(
+                    this.armarRespuestaDisponibilidad(
+                        turnoActualizadoTemporal,
+                        estaDisponible,
+                        this.buscarTurnosCercanos(turnoActualizadoTemporal, turnosDelMedico, 60)
+                    )
+                );
             }
 
             turno.fechaHora = nuevaFechaHora;
@@ -218,7 +295,7 @@ export class TurnoService {
         return this.turnoRepository.save(turno);
     }
 
-    darDeBajaTurno(turnoId, usuario, motivo) { //Dar de baja, no es DELETE, es actualizar estado
+    darDeBajaTurno(turnoId, usuario, motivo) {
         const turno = this.turnoRepository.findById(turnoId);
 
         if (!turno) {
@@ -245,7 +322,7 @@ export class TurnoService {
             throw new TurnoNotFoundError(turnoId);
         }
 
-        if (!faltaMasDeUnaHora(turno.fechaHora)) { //Por las dudas le dejo la misma restricción que para dar de baja
+        if (!faltaMasDeUnaHora(turno.fechaHora)) {
             throw new TurnoBajaFueraDeTiempoError();
         }
 

@@ -7,10 +7,20 @@ import {
 
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
+function copiarMedico(medico) { //Esto evita que se modifique el turno ya creado si el médico modifica su horario
+    return {
+        ...medico,
+        especialidades: [...(medico.especialidades ?? [])],
+        disponibilidades: (medico.disponibilidades ?? []).map(disponibilidad => ({
+            ...disponibilidad,
+        })),
+    };
+}
+
 export class Turno {
     constructor({ id, medico, paciente, fechaHora, sede, especialidad = null, practica = null, estado, historialEstados, costo, duracionTurno, modulosRequeridos}) {
         this.id = id;
-        this.medico = medico;
+        this.medico = copiarMedico(medico);
         this.paciente = paciente;
         this.fechaHora = fechaHora;
         this.sede = sede;

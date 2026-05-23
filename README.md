@@ -148,7 +148,9 @@ Rutas definidas en el router de turnos:
 |--------|------|-------------|
 | GET | `/turnos` | Lista todos los turnos |
 | GET | `/turnos/disponibilidad` | Consulta si un horario esta disponible e informa turnos cercanos |
+| GET | `/turnos/disponibles` | Genera turnos disponibles segun la disponibilidad actual del medico |
 | POST | `/turnos` | Crea un nuevo turno |
+| POST | `/turnos/solicitudes` | Solicita un turno y devuelve el analisis de disponibilidad usado |
 | GET | `/turnos/:id` | Busca un turno por ID |
 | PATCH | `/turnos/:id` | Actualiza un turno existente. Para cancelarlo, enviar `estado: "CANCELADO"` |
 | DELETE | `/turnos/:id` | Elimina un turno |
@@ -491,6 +493,14 @@ curl "http://localhost:3000/turnos/disponibilidad?medicoId=med-001&fechaHora=202
 
 La respuesta indica si el horario esta disponible, cuantos modulos requiere la prestacion y que turnos cercanos existen para ese medico.
 
+Generar turnos disponibles para un medico y especialidad:
+
+```bash
+curl "http://localhost:3000/turnos/disponibles?medicoId=med-001&especialidadId=esp-001"
+```
+
+Esta generacion usa la disponibilidad vigente del medico y descarta turnos superpuestos con turnos ya existentes. Si el medico modifica su disponibilidad, los turnos ya guardados no se reprograman; el cambio impacta en las nuevas consultas/generaciones.
+
 Dar de alta un turno:
 
 ```bash
@@ -541,6 +551,31 @@ curl -X POST http://localhost:3000/turnos \
 ```
 
 El alta valida que el medico tenga disponibilidad para ese dia y horario, que el inicio coincida con un modulo de 20 minutos y que no haya otro turno superpuesto para el mismo medico. Si se usa este ejemplo despues del 25 de mayo de 2026, cambiar `fechaHora` por un lunes futuro dentro del rango 08:00-12:00.
+
+Solicitar un turno devolviendo tambien la evaluacion usada:
+
+```bash
+curl -X POST http://localhost:3000/turnos/solicitudes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "tur-005",
+    "medico": { "id": "med-001" },
+    "paciente": { "id": "pac-004", "nombre": "Paciente Demo", "dni": "30123456" },
+    "fechaHora": "2026-05-25T09:20:00.000-03:00",
+    "sede": { "id": "sede-001", "nombre": "Sede Central" },
+    "especialidad": {
+      "id": "esp-001",
+      "nombre": "Cardiologia",
+      "duracionTurnoEnMins": 30,
+      "costoConsulta": 5000
+    },
+    "estado": "CONFIRMADO",
+    "historialEstados": [],
+    "costo": 5000
+  }'
+```
+
+Si la solicitud no esta disponible, la respuesta de error incluye `details` con `turnosCercanos`, `modulosRequeridos` y `duracionTurno`.
 
 Actualizar un turno:
 

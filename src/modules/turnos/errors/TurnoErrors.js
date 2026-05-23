@@ -9,8 +9,8 @@ export class TurnoNotFoundError extends AppError {
 }
 
 export class TurnoNoDisponibleError extends AppError {
-  constructor() {
-    super('El médico no tiene disponibilidad para la fecha y horario solicitados',400);
+  constructor(details = null) {
+    super('El médico no tiene disponibilidad para la fecha y horario solicitados',400, details);
   }
 }
 

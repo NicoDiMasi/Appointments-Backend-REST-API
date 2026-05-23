@@ -13,6 +13,14 @@ router
   .get((req, res, next) => turnoController.consultarDisponibilidad(req, res, next));
 
 router
+  .route('/disponibles')
+  .get((req, res, next) => turnoController.generarTurnosDisponibles(req, res, next));
+
+router
+  .route('/solicitudes')
+  .post((req, res, next) => turnoController.solicitar(req, res, next));
+
+router
   .route('/:id')
   .get((req, res, next) => turnoController.findById(req, res, next))
   .patch((req, res, next) => turnoController.update(req, res, next)) 

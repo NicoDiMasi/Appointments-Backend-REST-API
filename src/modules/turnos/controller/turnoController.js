@@ -37,6 +37,16 @@ export class TurnoController {
     }
   }
 
+  generarTurnosDisponibles(req, res, next) {
+    try {
+      const turnos = this.turnoService.generarTurnosDisponibles(req.query);
+
+      return res.status(200).json(turnos);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   create(req, res, next) {
     try {
       const datosTurno = {
@@ -46,6 +56,20 @@ export class TurnoController {
       const turnoCreado = this.turnoService.crearTurno(datosTurno);
       
       return res.status(201).json(turnoCreado);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  solicitar(req, res, next) {
+    try {
+      const datosTurno = {
+        ...req.body,
+        fechaHora: new Date(req.body.fechaHora),
+      };
+      const resultado = this.turnoService.solicitarTurno(datosTurno);
+      
+      return res.status(201).json(resultado);
     } catch (error) {
       return next(error);
     }
