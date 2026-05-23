@@ -155,6 +155,24 @@ Rutas definidas en el router de turnos:
 
 ---
 
+## Endpoints de pacientes
+
+El modulo de pacientes esta montado en:
+
+```text
+/pacientes
+```
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/pacientes` | Lista todos los pacientes |
+| POST | `/pacientes` | Crea un nuevo paciente |
+| GET | `/pacientes/:id` | Busca un paciente por ID |
+| PATCH | `/pacientes/:id` | Actualiza un paciente existente |
+| DELETE | `/pacientes/:id` | Elimina un paciente |
+
+---
+
 ## Estructura general del proyecto
 
 ```text
@@ -185,6 +203,19 @@ Rutas definidas en el router de turnos:
 │       │   │   └── MedicoService.js
 │       │   └── medicos.router.js
 │       │
+│       ├── pacientes/
+│       │   ├── controller/
+│       │   │   └── PacienteController.js
+│       │   ├── domain/
+│       │   │   └── Paciente.js
+│       │   ├── errors/
+│       │   │   └── PacienteErrors.js
+│       │   ├── repository/
+│       │   │   └── PacienteRepository.js
+│       │   ├── service/
+│       │   │   └── PacienteService.js
+│       │   └── pacientes.router.js
+│       │
 │       ├── routes/
 │       │   └── router.js
 │       │
@@ -207,10 +238,13 @@ Rutas definidas en el router de turnos:
 └── test/
     ├── medicos/
     │   └── MedicoService.test.js
+    ├── pacientes/
+    │   └── PacienteService.test.js
     ├── postman/
     │   ├── Disponibilidad Medicos.postman_collection.json
     │   └── Disponibilidad Medicos - Con validacion.postman_collection.json
     └── turnos/
+        ├── Agenda.test.js
         └── TurnoService.test.js
 ```
 
@@ -264,6 +298,8 @@ Actualmente existen tests para:
 
 ```text
 test/medicos/MedicoService.test.js
+test/pacientes/PacienteService.test.js
+test/turnos/Agenda.test.js
 test/turnos/TurnoService.test.js
 ```
 
@@ -291,6 +327,17 @@ Validan principalmente el comportamiento del servicio de turnos:
 - actualizar turnos
 - dar de baja turnos
 - eliminar turnos
+- validar errores de negocio
+
+### Tests de pacientes
+
+Validan principalmente el comportamiento del servicio de pacientes:
+
+- listar pacientes
+- buscar pacientes por ID
+- crear pacientes validos
+- actualizar pacientes
+- eliminar pacientes
 - validar errores de negocio
 
 
@@ -396,6 +443,14 @@ Medicos cargados en memoria:
 | `med-001` | Ana Gomez | Cardiologia, Clinica Medica | LUNES 08:00-12:00, MIERCOLES 14:00-18:00, VIERNES 09:00-13:00 |
 | `med-002` | Carlos Perez | Neurologia | MARTES 07:00-11:00, JUEVES 15:00-19:00, SABADO 08:00-12:00 |
 | `med-003` | Laura Martinez | Pediatria | LUNES 10:00-14:00, MIERCOLES 16:00-20:00, VIERNES 08:30-12:30 |
+
+Pacientes cargados en memoria:
+
+| ID | Nombre | DNI | Obra social | Plan |
+|----|--------|-----|-------------|------|
+| `pac-001` | Juan Lopez | 30111222 | OSDE | 210 |
+| `pac-002` | Maria Fernandez | 32555666 | Swiss Medical | SMG20 |
+| `pac-003` | Pedro Ramirez | 28999888 | Sin obra social | Sin plan |
 
 Turnos cargados en memoria:
 
@@ -552,3 +607,52 @@ curl -X DELETE http://localhost:3000/medicos/med-001/disponibilidades/MARTES
 ```
 
 Los dias validos son `DOMINGO`, `LUNES`, `MARTES`, `MIERCOLES`, `JUEVES`, `VIERNES` y `SABADO`.
+
+### Pacientes
+
+Listar pacientes:
+
+```bash
+curl http://localhost:3000/pacientes
+```
+
+Buscar un paciente por ID:
+
+```bash
+curl http://localhost:3000/pacientes/pac-001
+```
+
+Dar de alta un paciente:
+
+```bash
+curl -X POST http://localhost:3000/pacientes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "pac-004",
+    "usuario": {
+      "id": "usr-004",
+      "email": "paciente.demo@example.com"
+    },
+    "dni": "33123456",
+    "nombre": "Paciente Demo",
+    "obraSocial": "OSDE",
+    "plan": "210"
+  }'
+```
+
+Actualizar un paciente:
+
+```bash
+curl -X PATCH http://localhost:3000/pacientes/pac-004 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "obraSocial": "Swiss Medical",
+    "plan": "SMG20"
+  }'
+```
+
+Eliminar un paciente:
+
+```bash
+curl -X DELETE http://localhost:3000/pacientes/pac-004
+```
