@@ -1,4 +1,5 @@
 import { AppError } from "../errors/AppError.js"
+import { formatearFechaHoraArgentina } from "../utils/dateTime.js"
 
 export function errorHandler(err, req, res, next) {
     if (res.headersSent) {
@@ -22,6 +23,6 @@ export function errorHandler(err, req, res, next) {
     return res.status(500).json({
         status: "error",
         message: "Error interno del servidor",
-        timestamp: new Date().toISOString(),
+        timestamp: formatearFechaHoraArgentina(new Date()),
     })
 }

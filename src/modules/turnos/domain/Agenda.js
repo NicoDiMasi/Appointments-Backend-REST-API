@@ -4,6 +4,12 @@ import {
   DURACION_MODULO_EN_MINUTOS,
   calcularCantidadModulos,
 } from './ModuloTurno.js';
+import {
+  crearFechaHoraArgentina,
+  mismaFechaArgentina,
+  obtenerMinutosDelDiaArgentina,
+  obtenerPartesFechaArgentina,
+} from '../../../utils/dateTime.js';
 
 export class Agenda {
 
@@ -68,7 +74,7 @@ export class Agenda {
 
   obtenerMinutosDelDia(valor) {
     if (valor instanceof Date) {
-      return valor.getHours() * 60 + valor.getMinutes();
+      return obtenerMinutosDelDiaArgentina(valor);
     }
 
     if (typeof valor === 'string') {
@@ -90,25 +96,37 @@ export class Agenda {
       SABADO: 6,
     };
 
-    const fecha = new Date();
+    const partesHoy = obtenerPartesFechaArgentina(new Date());
     const diaObjetivo = dias[diaSemana];
 
-    const diferenciaDias = (diaObjetivo - fecha.getDay() + 7) % 7 || 7;
+    const diferenciaDias = (diaObjetivo - partesHoy.diaSemana + 7) % 7 || 7;
+    const fechaBaseArgentina = new Date(Date.UTC(
+      partesHoy.anio,
+      partesHoy.mes - 1,
+      partesHoy.dia
+    ));
 
-    fecha.setDate(fecha.getDate() + diferenciaDias);
-    fecha.setHours(0, 0, 0, 0);
+    fechaBaseArgentina.setUTCDate(fechaBaseArgentina.getUTCDate() + diferenciaDias);
 
-    return fecha;
+    return crearFechaHoraArgentina({
+      anio: fechaBaseArgentina.getUTCFullYear(),
+      mes: fechaBaseArgentina.getUTCMonth() + 1,
+      dia: fechaBaseArgentina.getUTCDate(),
+    });
   }
 
   crearFechaConMinutos(fechaBase, minutosDelDia) {
-    const fecha = new Date(fechaBase);
+    const partesFechaBase = obtenerPartesFechaArgentina(fechaBase);
     const horas = Math.floor(minutosDelDia / 60);
     const minutos = minutosDelDia % 60;
 
-    fecha.setHours(horas, minutos, 0, 0);
-
-    return fecha;
+    return crearFechaHoraArgentina({
+      anio: partesFechaBase.anio,
+      mes: partesFechaBase.mes,
+      dia: partesFechaBase.dia,
+      horas,
+      minutos,
+    });
   }
 
   estaDisponible(turno, turnosDelMedico = []) {
@@ -140,8 +158,7 @@ export class Agenda {
   }
 
   seSuperponen(turnoA, turnoB) {
-    const mismaFecha =
-      turnoA.fechaHora.toDateString() === turnoB.fechaHora.toDateString();
+    const mismaFecha = mismaFechaArgentina(turnoA.fechaHora, turnoB.fechaHora);
     
     return (
       mismaFecha &&

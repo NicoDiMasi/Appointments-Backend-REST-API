@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { formatearFechaHoraArgentina } from '../../utils/dateTime.js';
 
 const router = Router();
 
@@ -6,7 +7,7 @@ const router = Router();
 router.get('/', (req, res) => {
   res.json({
     status: 'UP',
-    timestamp: new Date().toISOString(),
+    timestamp: formatearFechaHoraArgentina(new Date()),
     uptime: process.uptime(),
   });
 });

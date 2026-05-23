@@ -1,4 +1,5 @@
 import { EstadoTurno } from './EstadoTurno.js';
+import { formatearFechaHoraArgentina } from '../../../utils/dateTime.js';
 
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
@@ -39,5 +40,15 @@ export class CambioEstadoTurno {
       usuario,
       motivo: motivo ?? '',
     });
+  }
+
+  toJSON() {
+    return {
+      fechaHoraIngreso: formatearFechaHoraArgentina(this.fechaHoraIngreso),
+      estado: this.estado,
+      turno: this.turno,
+      usuario: this.usuario,
+      motivo: this.motivo,
+    };
   }
 }

@@ -1,6 +1,10 @@
 import { medicoRepository } from '../../medicos/repository/MedicoRepository.js';
 import { Turno } from '../domain/Turno.js';
 import { EstadoTurno } from '../domain/EstadoTurno.js';
+import {
+  crearFechaHoraArgentina,
+  obtenerPartesFechaArgentina,
+} from '../../../utils/dateTime.js';
 
 export class TurnoRepository {
   constructor() {
@@ -129,17 +133,27 @@ export class TurnoRepository {
       SABADO: 6,
     };
 
-    const fecha = new Date();
+    const partesHoy = obtenerPartesFechaArgentina(new Date());
     const diaObjetivo = dias[diaSemana];
 
-    const diferenciaDias = (diaObjetivo - fecha.getDay() + 7) % 7 || 7;
+    const diferenciaDias = (diaObjetivo - partesHoy.diaSemana + 7) % 7 || 7;
+    const fechaBaseArgentina = new Date(Date.UTC(
+      partesHoy.anio,
+      partesHoy.mes - 1,
+      partesHoy.dia
+    ));
 
-    fecha.setDate(fecha.getDate() + diferenciaDias);
+    fechaBaseArgentina.setUTCDate(fechaBaseArgentina.getUTCDate() + diferenciaDias);
 
     const [horas, minutos] = hora.split(':').map(Number);
-    fecha.setHours(horas, minutos, 0, 0);
 
-    return fecha;
+    return crearFechaHoraArgentina({
+      anio: fechaBaseArgentina.getUTCFullYear(),
+      mes: fechaBaseArgentina.getUTCMonth() + 1,
+      dia: fechaBaseArgentina.getUTCDate(),
+      horas,
+      minutos,
+    });
   }
 }
 

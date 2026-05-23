@@ -1,6 +1,8 @@
+import { formatearFechaHoraArgentina } from "../utils/dateTime.js"
+
 export function errorLogger(err, req, res, next) {
     console.error({
-        timestamp: new Date().toISOString(),
+        timestamp: formatearFechaHoraArgentina(new Date()),
         method: req.method,
         path: req.originalUrl,
         error: {

@@ -108,7 +108,7 @@ Se utiliza `--experimental-vm-modules` porque el proyecto trabaja con ES Modules
 ```json
 {
   "status": "UP",
-  "timestamp": "2026-04-19T00:36:38.609Z",
+  "timestamp": "2026-04-18T21:36:38.609-03:00",
   "uptime": 2.12
 }
 ```

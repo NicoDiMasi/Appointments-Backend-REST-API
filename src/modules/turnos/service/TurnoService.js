@@ -14,6 +14,11 @@ import {
     TurnoBajaFueraDeTiempoError,
     TurnoInvalidoError,
 } from '../errors/TurnoErrors.js';
+import {
+    formatearFechaHoraArgentina,
+    mismaFechaArgentina,
+    parsearFechaHoraArgentina,
+} from '../../../utils/dateTime.js';
 
 
 function faltaMasDeUnaHora(fechaHoraTurno) {
@@ -110,7 +115,7 @@ export class TurnoService {
             throw new MedicoNotFoundError(medicoId);
         }
 
-        const fechaHoraSolicitada = new Date(fechaHora);
+        const fechaHoraSolicitada = parsearFechaHoraArgentina(fechaHora);
 
         if (Number.isNaN(fechaHoraSolicitada.getTime())) {
             throw new TurnoInvalidoError('La fecha y hora del turno no es válida');
@@ -190,7 +195,7 @@ export class TurnoService {
         const inicioSolicitado = turnoSolicitado.fechaHora.getTime();
 
         return turnosDelMedico
-            .filter(turno => turno.fechaHora.toDateString() === turnoSolicitado.fechaHora.toDateString())
+            .filter(turno => mismaFechaArgentina(turno.fechaHora, turnoSolicitado.fechaHora))
             .filter(turno => {
                 const diferencia = Math.abs(turno.fechaHora.getTime() - inicioSolicitado);
 
@@ -199,7 +204,7 @@ export class TurnoService {
             .map(turno => ({
                 id: turno.id,
                 estado: turno.estado,
-                fechaHora: turno.fechaHora.toISOString(),
+                fechaHora: formatearFechaHoraArgentina(turno.fechaHora),
                 duracionTurno: turno.duracionTurno,
                 seSuperpone: this.agenda.seSuperponen(turnoSolicitado, turno),
             }));
@@ -219,7 +224,7 @@ export class TurnoService {
         return {
             disponible,
             medicoId: turno.medico.id,
-            fechaHora: turno.fechaHora.toISOString(),
+            fechaHora: formatearFechaHoraArgentina(turno.fechaHora),
             duracionPrestacion: duracionPrestacion ?? this.agenda.obtenerDuracionPrestacion(
                 turno.especialidad ?? turno.practica
             ),
@@ -235,7 +240,7 @@ export class TurnoService {
         if (!turno) throw new TurnoNotFoundError(turnoId);
 
         if (cambios.fechaHora !== undefined) {
-            const nuevaFechaHora = new Date(cambios.fechaHora);
+            const nuevaFechaHora = parsearFechaHoraArgentina(cambios.fechaHora);
 
             if (Number.isNaN(nuevaFechaHora.getTime())) {
                 throw new TurnoInvalidoError('La fecha y hora del turno no es válida');

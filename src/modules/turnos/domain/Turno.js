@@ -4,6 +4,11 @@ import {
     calcularCantidadModulos,
     calcularDuracionModular,
 } from './ModuloTurno.js';
+import {
+    formatearFechaHoraArgentina,
+    obtenerDiaSemanaArgentina,
+    obtenerMinutosDelDiaArgentina,
+} from '../../../utils/dateTime.js';
 
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
@@ -106,15 +111,32 @@ export class Turno {
     }
 
     diaTurno() {
-      return this.fechaHora.getDay();
+      return obtenerDiaSemanaArgentina(this.fechaHora);
     }
 
     inicioTurno() {
-      return this.fechaHora.getHours() * 60 + this.fechaHora.getMinutes();
+      return obtenerMinutosDelDiaArgentina(this.fechaHora);
     }
 
     finTurno() {
       return this.inicioTurno() + this.duracionTurno;
+    }
+
+    toJSON() {
+      return {
+        id: this.id,
+        medico: this.medico,
+        paciente: this.paciente,
+        fechaHora: formatearFechaHoraArgentina(this.fechaHora),
+        sede: this.sede,
+        especialidad: this.especialidad,
+        practica: this.practica,
+        estado: this.estado,
+        historialEstados: this.historialEstados,
+        costo: this.costo,
+        duracionTurno: this.duracionTurno,
+        modulosRequeridos: this.modulosRequeridos,
+      };
     }
 
     

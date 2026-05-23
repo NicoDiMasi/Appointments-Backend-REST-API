@@ -1,6 +1,7 @@
 import { TurnoService } from '../service/TurnoService.js';
 import { turnoRepository } from '../repository/TurnoRepository.js';
 import { EstadoTurno } from '../domain/EstadoTurno.js';
+import { parsearFechaHoraArgentina } from '../../../utils/dateTime.js';
 
 export class TurnoController {
   constructor(turnoService = new TurnoService(turnoRepository)) {
@@ -51,10 +52,10 @@ export class TurnoController {
     try {
       const datosTurno = {
         ...req.body,
-        fechaHora: new Date(req.body.fechaHora),
+        fechaHora: parsearFechaHoraArgentina(req.body.fechaHora),
       };
       const turnoCreado = this.turnoService.crearTurno(datosTurno);
-      
+
       return res.status(201).json(turnoCreado);
     } catch (error) {
       return next(error);
@@ -65,10 +66,10 @@ export class TurnoController {
     try {
       const datosTurno = {
         ...req.body,
-        fechaHora: new Date(req.body.fechaHora),
+        fechaHora: parsearFechaHoraArgentina(req.body.fechaHora),
       };
       const resultado = this.turnoService.solicitarTurno(datosTurno);
-      
+
       return res.status(201).json(resultado);
     } catch (error) {
       return next(error);
@@ -122,8 +123,6 @@ export class TurnoController {
       return next(error);
     }
   }
-
-  
 }
 
 export const turnoController = new TurnoController();
