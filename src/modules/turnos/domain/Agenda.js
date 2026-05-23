@@ -1,5 +1,9 @@
 import { Turno } from './Turno.js';
 import { EstadoTurno } from './EstadoTurno.js';
+import {
+  DURACION_MODULO_EN_MINUTOS,
+  calcularCantidadModulos,
+} from './ModuloTurno.js';
 
 export class Agenda {
 
@@ -13,6 +17,7 @@ export class Agenda {
   
   generarTurnosPara(prestacion, medico, tipoPrestacion) {
     const turnosGenerados = [];
+    const cantidadModulos = calcularCantidadModulos(this.obtenerDuracionPrestacion(prestacion));
 
     medico.disponibilidades.forEach((disponibilidad) => {
       const fechaDisponibilidad = this.obtenerProximaFechaParaDia(
@@ -22,7 +27,7 @@ export class Agenda {
       let inicioTurno = this.obtenerMinutosDelDia(disponibilidad.horaDesde);
       const finDisponibilidad = this.obtenerMinutosDelDia(disponibilidad.horaHasta);
 
-      while (inicioTurno + prestacion.duracionTurnoEnMins <= finDisponibilidad) {
+      while (inicioTurno + DURACION_MODULO_EN_MINUTOS <= finDisponibilidad) {
         const fechaHoraTurno = this.crearFechaConMinutos(
           fechaDisponibilidad,
           inicioTurno
@@ -39,16 +44,21 @@ export class Agenda {
           estado: EstadoTurno.DISPONIBLE,
           historialEstados: [],
           costo: prestacion.costoConsulta,
-          duracionTurno: prestacion.duracionTurnoEnMins
+          duracionTurno: DURACION_MODULO_EN_MINUTOS,
+          modulosRequeridos: cantidadModulos,
         });
 
         turnosGenerados.push(turnoDisponible);
 
-        inicioTurno += prestacion.duracionTurnoEnMins;
+        inicioTurno += DURACION_MODULO_EN_MINUTOS;
       }
     });
 
     return turnosGenerados;
+  }
+
+  obtenerDuracionPrestacion(prestacion) {
+    return prestacion.duracionTurnoEnMins ?? prestacion.duracionEnMins;
   }
 
   refrescarTurnosSegunDisponibilidadDe(medico) {
@@ -116,8 +126,17 @@ export class Agenda {
 
       const finDisponibilidad = this.obtenerMinutosDelDia(disponibilidadHoraria.horaHasta);
 
-      return (this.obtenerNumeroDiaSemana(disponibilidadHoraria.diaSemana) === turno.diaTurno() && turno.inicioTurno() >= inicioDisponibilidad && turno.finTurno() <= finDisponibilidad);
+      return (
+        this.obtenerNumeroDiaSemana(disponibilidadHoraria.diaSemana) === turno.diaTurno() &&
+        turno.inicioTurno() >= inicioDisponibilidad &&
+        turno.finTurno() <= finDisponibilidad &&
+        this.iniciaEnModulo(turno.inicioTurno(), inicioDisponibilidad)
+      );
     });
+  }
+
+  iniciaEnModulo(inicioTurno, inicioDisponibilidad) {
+    return (inicioTurno - inicioDisponibilidad) % DURACION_MODULO_EN_MINUTOS === 0;
   }
 
   seSuperponen(turnoA, turnoB) {

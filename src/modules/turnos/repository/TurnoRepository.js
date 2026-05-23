@@ -83,7 +83,7 @@ export class TurnoRepository {
       id: 'tur-001',
       medico: medico1,
       paciente: paciente1,
-      fechaHora: this._proximaFechaParaDiaYHora('LUNES', '08:30'),
+      fechaHora: this._proximaFechaParaDiaYHora('LUNES', '08:40'),
       sede: sedeCentral,
       especialidad: cardiologia,
       estado: EstadoTurno.DISPONIBLE,

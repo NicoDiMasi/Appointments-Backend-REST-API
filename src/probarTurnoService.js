@@ -44,7 +44,9 @@ probarOK('Crear turno dentro de disponibilidad', () => {
   const turnoRepositoryMock = crearTurnoRepositoryMock([turnoExistente]);
   const turnoService = new TurnoService(turnoRepositoryMock);
 
-  const datosTurno = crearDatosTurnoDentroDeDisponibilidadMock();
+  const datosTurno = crearDatosTurnoDentroDeDisponibilidadMock({
+    fechaHora: crearFechaProxima(DiaSemana.LUNES, '09:20'),
+  });
 
   turnoService.crearTurno(datosTurno);
 });

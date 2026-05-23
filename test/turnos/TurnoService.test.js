@@ -69,7 +69,7 @@ describe('TurnoService', () => {
             paciente: Object.prototype.hasOwnProperty.call(overrides, 'paciente')
                 ? overrides.paciente
                 : paciente,
-            fechaHora: overrides.fechaHora ?? proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: overrides.fechaHora ?? proximaFechaParaDiaYHora('LUNES', '08:40'),
             sede: Object.prototype.hasOwnProperty.call(overrides, 'sede')
                 ? overrides.sede
                 : sede,
@@ -89,7 +89,7 @@ describe('TurnoService', () => {
         const turno1 = crearTurno({ id: 'tur-001' });
         const turno2 = crearTurno({
             id: 'tur-002',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:20'),
         });
 
         turnoRepository.save(turno1);
@@ -121,7 +121,7 @@ describe('TurnoService', () => {
     test('debería crear un turno válido cuando el médico tiene disponibilidad', () => {
         const datosTurno = crearDatosTurno({
             id: 'tur-001',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
         });
 
         const resultado = turnoService.crearTurno(datosTurno);
@@ -168,7 +168,7 @@ describe('TurnoService', () => {
     test('debería rechazar un turno superpuesto con otro turno del mismo médico', () => {
         const turnoExistente = crearTurno({
             id: 'tur-001',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
         });
 
         turnoRepository.save(turnoExistente);
@@ -186,7 +186,7 @@ describe('TurnoService', () => {
     test('debería actualizar un turno existente', () => {
         const turno = crearTurno({
             id: 'tur-001',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
         });
 
         turnoRepository.save(turno);
@@ -243,7 +243,7 @@ describe('TurnoService', () => {
     test('debería dar de baja un turno existente', () => {
         const turno = crearTurno({
             id: 'tur-001',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
         });
 
         turnoRepository.save(turno);
@@ -298,7 +298,7 @@ describe('TurnoService', () => {
     test('debería eliminar un turno existente', () => {
         const turno = crearTurno({
             id: 'tur-001',
-            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:30'),
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
         });
 
         turnoRepository.save(turno);

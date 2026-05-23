@@ -1,10 +1,14 @@
 import { EstadoTurno } from './EstadoTurno.js';
 import { CambioEstadoTurno } from './CambioEstadoTurno.js';
+import {
+    calcularCantidadModulos,
+    calcularDuracionModular,
+} from './ModuloTurno.js';
 
 const ESTADOS_VALIDOS = Object.values(EstadoTurno);
 
 export class Turno {
-    constructor({ id, medico, paciente, fechaHora, sede, especialidad = null, practica = null, estado, historialEstados, costo, duracionTurno}) {
+    constructor({ id, medico, paciente, fechaHora, sede, especialidad = null, practica = null, estado, historialEstados, costo, duracionTurno, modulosRequeridos}) {
         this.id = id;
         this.medico = medico;
         this.paciente = paciente;
@@ -16,6 +20,7 @@ export class Turno {
         this.historialEstados = historialEstados ?? [];
         this.costo = costo;
         this.duracionTurno = duracionTurno;
+        this.modulosRequeridos = modulosRequeridos;
     }
 
     
@@ -41,7 +46,7 @@ export class Turno {
     }
 
 
-    static create({ id, medico, paciente, fechaHora, sede, especialidad = null, practica = null, estado, historialEstados, costo, duracionTurno }) {
+    static create({ id, medico, paciente, fechaHora, sede, especialidad = null, practica = null, estado, historialEstados, costo, duracionTurno, modulosRequeridos }) {
         if (!id || typeof id !== 'string' || id.trim() === '') {
             throw new Error('El id del turno es obligatorio');
         }
@@ -66,10 +71,13 @@ export class Turno {
         if (typeof costo !== 'number' || costo < 0) {
             throw new Error('costo debe ser un número mayor o igual a cero');
         }
-        const duracionTurnoCalculo =
+        const duracionPrestacion =
           practica?.duracionTurnoEnMins ??
           practica?.duracionEnMins ??
           especialidad?.duracionTurnoEnMins;
+
+        const modulosRequeridosCalculo = modulosRequeridos ?? calcularCantidadModulos(duracionPrestacion);
+        const duracionTurnoCalculo = duracionTurno ?? calcularDuracionModular(duracionPrestacion);
 
         return new Turno({
             id,
@@ -82,7 +90,8 @@ export class Turno {
             estado,
             historialEstados: historialEstados ?? [],
             costo,
-            duracionTurno: duracionTurnoCalculo
+            duracionTurno: duracionTurnoCalculo,
+            modulosRequeridos: modulosRequeridosCalculo
         });
     }
 

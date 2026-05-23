@@ -401,7 +401,7 @@ Turnos cargados en memoria:
 
 | ID | Medico | Estado | Horario |
 |----|--------|--------|---------|
-| `tur-001` | `med-001` | DISPONIBLE | Proximo LUNES 08:30 |
+| `tur-001` | `med-001` | DISPONIBLE | Proximo LUNES 08:40 |
 | `tur-002` | `med-002` | CONFIRMADO | Proximo MARTES 08:00 |
 | `tur-003` | `med-003` | DISPONIBLE | Proximo VIERNES 09:00 |
 
@@ -457,7 +457,7 @@ curl -X POST http://localhost:3000/turnos \
       "nombre": "Paciente Demo",
       "dni": "30123456"
     },
-    "fechaHora": "2026-05-25T09:30:00.000-03:00",
+    "fechaHora": "2026-05-25T09:20:00.000-03:00",
     "sede": {
       "id": "sede-001",
       "nombre": "Sede Central",
@@ -476,7 +476,7 @@ curl -X POST http://localhost:3000/turnos \
   }'
 ```
 
-El alta valida que el medico tenga disponibilidad para ese dia y horario, y que no haya otro turno superpuesto para el mismo medico. Si se usa este ejemplo despues del 25 de mayo de 2026, cambiar `fechaHora` por un lunes futuro dentro del rango 08:00-12:00.
+El alta valida que el medico tenga disponibilidad para ese dia y horario, que el inicio coincida con un modulo de 20 minutos y que no haya otro turno superpuesto para el mismo medico. Si se usa este ejemplo despues del 25 de mayo de 2026, cambiar `fechaHora` por un lunes futuro dentro del rango 08:00-12:00.
 
 Actualizar un turno:
 
@@ -484,7 +484,7 @@ Actualizar un turno:
 curl -X PATCH http://localhost:3000/turnos/tur-001 \
   -H "Content-Type: application/json" \
   -d '{
-    "fechaHora": "2026-05-25T10:30:00.000-03:00",
+    "fechaHora": "2026-05-25T10:40:00.000-03:00",
     "costo": 6500
   }'
 ```

@@ -3,6 +3,10 @@ import { Agenda } from '../domain/Agenda.js';
 import { EstadoTurno } from '../domain/EstadoTurno.js';
 import { TurnoRepository } from '../repository/TurnoRepository.js';
 import {
+    calcularCantidadModulos,
+    calcularDuracionModular,
+} from '../domain/ModuloTurno.js';
+import {
     TurnoNotFoundError,
     TurnoNoDisponibleError,
     TurnoBajaFueraDeTiempoError,
@@ -98,7 +102,8 @@ export class TurnoService {
 
         if (cambios.especialidad !== undefined) {
             turno.especialidad = cambios.especialidad;
-            turno.duracionTurno = cambios.especialidad.duracionTurnoEnMins;
+            turno.modulosRequeridos = calcularCantidadModulos(cambios.especialidad.duracionTurnoEnMins);
+            turno.duracionTurno = calcularDuracionModular(cambios.especialidad.duracionTurnoEnMins);
         }
 
         if (cambios.costo !== undefined) {

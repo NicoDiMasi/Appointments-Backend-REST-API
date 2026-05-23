@@ -120,7 +120,7 @@ export function crearTurnoMock(overrides = {}) {
 export function crearDatosTurnoDentroDeDisponibilidadMock(overrides = {}) {
   return crearDatosTurnoMock({
     id: 'tur-ok-001',
-    fechaHora: crearFechaProxima(DiaSemana.LUNES, '08:30'),
+    fechaHora: crearFechaProxima(DiaSemana.LUNES, '08:40'),
     ...overrides,
   });
 }
