@@ -9,7 +9,7 @@ router
   .post((req, res, next) => turnoController.create(req, res, next));
 
 router
-  .route('/disponibilidad')
+  .route('/disponibilidades')
   .get((req, res, next) => turnoController.consultarDisponibilidad(req, res, next));
 
 router
