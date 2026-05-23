@@ -35,6 +35,10 @@ export class TurnoRepository {
     return this.turnos.filter(turno => turno.medico.id === medicoId);
   }
 
+  findByPacienteId(pacienteId) {
+    return this.turnos.filter(turno => turno.paciente?.id === pacienteId);
+  }
+
   deleteById(id) { //Porque lo agregué en TurnoService
     const index = this.turnos.findIndex(turno => turno.id === id);
 

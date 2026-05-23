@@ -14,4 +14,17 @@ router
   .patch(PacienteController.update)
   .delete(PacienteController.delete);
 
+router
+  .route('/:id/turnos')
+  .get(PacienteController.consultarHistorialTurnos)
+  .post(PacienteController.reservarTurno);
+
+router
+  .route('/:id/turnos/:turnoId/cancelacion')
+  .patch(PacienteController.cancelarTurno);
+
+router
+  .route('/:id/turnos/:turnoId/cambio')
+  .patch(PacienteController.cambiarTurno);
+
 export default router;

@@ -50,6 +50,10 @@ export class TurnoService {
       return turno;
     }
 
+    findByPacienteId(pacienteId) {
+      return this.turnoRepository.findByPacienteId(pacienteId);
+    }
+
     crearTurno(datosTurno) {
         const { turnoNuevo, evaluacionDisponibilidad } = this.evaluarSolicitudTurno(datosTurno);
 
@@ -58,6 +62,65 @@ export class TurnoService {
         }
 
         return this.turnoRepository.save(turnoNuevo);
+    }
+
+    reservarTurnoPaciente(paciente, datosTurno) {
+        const medicoId = datosTurno.medico?.id ?? datosTurno.medicoId;
+        const medico = this.medicoRepository.findById(medicoId);
+
+        if (!medico) {
+            throw new MedicoNotFoundError(medicoId);
+        }
+
+        const especialidad = datosTurno.especialidad ??
+            medico.especialidades.find(e => e.id === datosTurno.especialidadId);
+
+        if (!especialidad) {
+            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${datosTurno.especialidadId}'`);
+        }
+
+        return this.crearTurno({
+            ...datosTurno,
+            medico: { id: medico.id },
+            paciente,
+            fechaHora: parsearFechaHoraArgentina(datosTurno.fechaHora),
+            especialidad,
+            estado: EstadoTurno.RESERVADO,
+            historialEstados: datosTurno.historialEstados ?? [],
+            costo: datosTurno.costo ?? especialidad.costoConsulta,
+        });
+    }
+
+    cancelarTurnoPaciente(paciente, turnoId, motivo) {
+        this.validarMotivo(motivo);
+
+        const turno = this.obtenerTurnoDelPaciente(turnoId, paciente.id);
+
+        return this.darDeBajaTurno(
+            turno.id,
+            { id: paciente.id, nombre: paciente.nombre },
+            motivo
+        );
+    }
+
+    cambiarTurnoPaciente(paciente, turnoId, cambios) {
+        const turno = this.obtenerTurnoDelPaciente(turnoId, paciente.id);
+
+        if (!faltaMasDeUnaHora(turno.fechaHora)) {
+            throw new TurnoBajaFueraDeTiempoError();
+        }
+
+        const medicoSolicitadoId = cambios.medico?.id ?? cambios.medicoId;
+
+        if (medicoSolicitadoId && medicoSolicitadoId !== turno.medico.id) {
+            throw new TurnoInvalidoError('El cambio de turno debe mantener el mismo profesional');
+        }
+
+        return this.actualizarTurno(turno.id, {
+            ...cambios,
+            fechaHora: parsearFechaHoraArgentina(cambios.fechaHora),
+            medico: turno.medico,
+        });
     }
 
     solicitarTurno(datosTurno) {
@@ -232,6 +295,22 @@ export class TurnoService {
             modulosRequeridos: turno.modulosRequeridos,
             turnosCercanos,
         };
+    }
+
+    obtenerTurnoDelPaciente(turnoId, pacienteId) {
+        const turno = this.findById(turnoId);
+
+        if (turno.paciente?.id !== pacienteId) {
+            throw new TurnoInvalidoError('El turno no pertenece al paciente indicado');
+        }
+
+        return turno;
+    }
+
+    validarMotivo(motivo) {
+        if (typeof motivo !== 'string' || motivo.trim() === '') {
+            throw new TurnoInvalidoError('El motivo de cancelación es obligatorio');
+        }
     }
 
     actualizarTurno(turnoId, cambios) {

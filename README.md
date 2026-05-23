@@ -173,6 +173,10 @@ El modulo de pacientes esta montado en:
 | GET | `/pacientes/:id` | Busca un paciente por ID |
 | PATCH | `/pacientes/:id` | Actualiza un paciente existente |
 | DELETE | `/pacientes/:id` | Elimina un paciente |
+| GET | `/pacientes/:id/turnos` | Consulta el historial personal de turnos |
+| POST | `/pacientes/:id/turnos` | Reserva un turno validando disponibilidad |
+| PATCH | `/pacientes/:id/turnos/:turnoId/cancelacion` | Cancela un turno con motivo y al menos una hora de anticipacion |
+| PATCH | `/pacientes/:id/turnos/:turnoId/cambio` | Cambia un turno a otro slot disponible del mismo profesional |
 
 ---
 
@@ -700,3 +704,50 @@ Eliminar un paciente:
 ```bash
 curl -X DELETE http://localhost:3000/pacientes/pac-004
 ```
+
+Reservar un turno para un paciente:
+
+```bash
+curl -X POST http://localhost:3000/pacientes/pac-001/turnos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "tur-pac-001",
+    "medicoId": "med-001",
+    "especialidadId": "esp-001",
+    "fechaHora": "2026-05-25T09:20:00.000-03:00",
+    "sede": {
+      "id": "sede-001",
+      "nombre": "Sede Central"
+    }
+  }'
+```
+
+Consultar historial personal de turnos:
+
+```bash
+curl http://localhost:3000/pacientes/pac-001/turnos
+```
+
+Cancelar un turno del paciente:
+
+```bash
+curl -X PATCH http://localhost:3000/pacientes/pac-001/turnos/tur-pac-001/cancelacion \
+  -H "Content-Type: application/json" \
+  -d '{
+    "motivo": "El paciente no puede asistir"
+  }'
+```
+
+La cancelacion exige que falte al menos una hora para el turno y que el motivo no este vacio.
+
+Cambiar un turno a otro slot del mismo profesional:
+
+```bash
+curl -X PATCH http://localhost:3000/pacientes/pac-001/turnos/tur-pac-001/cambio \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fechaHora": "2026-05-25T10:00:00.000-03:00"
+  }'
+```
+
+El cambio mantiene el mismo profesional del turno original, valida que el nuevo slot este disponible y tambien exige que falte al menos una hora para el turno actual.
