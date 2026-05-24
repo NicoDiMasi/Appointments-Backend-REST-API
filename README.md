@@ -129,6 +129,8 @@ El modulo de medicos esta montado en:
 | POST | `/medicos/:medicoId/disponibilidades` | Agrega una disponibilidad a un medico |
 | PATCH | `/medicos/:medicoId/disponibilidades/:diaSemana` | Actualiza una disponibilidad existente |
 | DELETE | `/medicos/:medicoId/disponibilidades/:diaSemana` | Elimina una disponibilidad existente |
+| GET | `/medicos/:medicoId/pacientes/:pacienteId/turnos` | Consulta turnos de un paciente con ese medico |
+| PATCH | `/medicos/:medicoId/turnos/:turnoId` | Actualiza un turno del medico. Para cancelarlo, enviar `estado: "CANCELADO"` y `motivo` |
 
 Ejemplo de ruta completa:
 
@@ -147,12 +149,12 @@ Rutas definidas en el router de turnos:
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | GET | `/turnos` | Lista todos los turnos |
-| GET | `/turnos/disponibilidad` | Consulta si un horario esta disponible e informa turnos cercanos |
+| GET | `/turnos/disponibilidades` | Consulta si un horario esta disponible e informa turnos cercanos |
 | GET | `/turnos/disponibles` | Genera turnos disponibles segun la disponibilidad actual del medico |
 | POST | `/turnos` | Crea un nuevo turno |
 | POST | `/turnos/solicitudes` | Solicita un turno y devuelve el analisis de disponibilidad usado |
 | GET | `/turnos/:id` | Busca un turno por ID |
-| PATCH | `/turnos/:id` | Actualiza un turno existente. Para cancelarlo, enviar `estado: "CANCELADO"` |
+| PATCH | `/turnos/:id` | Actualiza un turno existente. Para cancelarlo, enviar `estado: "CANCELADO"` y `motivo`; para marcarlo realizado, enviar `estado: "REALIZADO"` |
 | DELETE | `/turnos/:id` | Elimina un turno |
 
 
@@ -492,7 +494,7 @@ curl http://localhost:3000/turnos/tur-001
 Consultar disponibilidad de un medico para un horario:
 
 ```bash
-curl "http://localhost:3000/turnos/disponibilidad?medicoId=med-001&fechaHora=2026-05-25T09:20:00.000-03:00&especialidadId=esp-001"
+curl "http://localhost:3000/turnos/disponibilidades?medicoId=med-001&fechaHora=2026-05-25T09:20:00.000-03:00&especialidadId=esp-001"
 ```
 
 La respuesta indica si el horario esta disponible, cuantos modulos requiere la prestacion y que turnos cercanos existen para ese medico.
@@ -609,6 +611,20 @@ curl -X PATCH http://localhost:3000/turnos/tur-001 \
 
 La baja solo se permite hasta una hora antes del horario del turno.
 
+Marcar un turno como realizado:
+
+```bash
+curl -X PATCH http://localhost:3000/turnos/tur-001 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "estado": "REALIZADO",
+    "usuario": {
+      "id": "med-001",
+      "nombre": "Ana Gomez"
+    }
+  }'
+```
+
 Eliminar un turno:
 
 ```bash
@@ -652,6 +668,23 @@ Eliminar disponibilidad:
 
 ```bash
 curl -X DELETE http://localhost:3000/medicos/med-001/disponibilidades/MARTES
+```
+
+Consultar turnos de un paciente con un medico:
+
+```bash
+curl http://localhost:3000/medicos/med-001/pacientes/pac-001/turnos
+```
+
+Cancelar un turno desde el medico:
+
+```bash
+curl -X PATCH http://localhost:3000/medicos/med-001/turnos/tur-001 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "estado": "CANCELADO",
+    "motivo": "El medico no puede atender"
+  }'
 ```
 
 Los dias validos son `DOMINGO`, `LUNES`, `MARTES`, `MIERCOLES`, `JUEVES`, `VIERNES` y `SABADO`.

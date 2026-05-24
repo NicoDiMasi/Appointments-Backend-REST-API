@@ -1,5 +1,7 @@
 import { medicoRepository } from '../repository/MedicoRepository.js';
 import { DisponibilidadHoraria } from '../domain/DisponibilidadHoraria.js';
+import { TurnoService } from '../../turnos/service/TurnoService.js';
+import { turnoRepository } from '../../turnos/repository/TurnoRepository.js';
 import {
   MedicoNotFoundError,
   DisponibilidadNotFoundError,
@@ -10,6 +12,8 @@ function horaAMinutos(hora) {
   const [h, m] = hora.split(':').map(Number);
   return h * 60 + m;
 }
+
+const turnoService = new TurnoService(turnoRepository);
 
 export const MedicoService = {
   listarDisponibilidades(medicoId) {
@@ -66,5 +70,25 @@ export const MedicoService = {
 
     medico.disponibilidades.splice(index, 1);
     medicoRepository.save(medico);
+  },
+
+  consultarTurnosDePaciente(medicoId, pacienteId) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    return turnoService.findByMedicoAndPacienteId(medicoId, pacienteId);
+  },
+
+  actualizarTurno(medicoId, turnoId, cambios) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    if (cambios.estado === 'CANCELADO') {
+      return turnoService.cancelarTurnoMedico(medico, turnoId, cambios.motivo);
+    }
+
+    turnoService.obtenerTurnoDelMedico(turnoId, medicoId);
+
+    return turnoService.actualizarTurno(turnoId, cambios);
   },
 };

@@ -13,4 +13,12 @@ router
   .patch(MedicoController.actualizarDisponibilidad)
   .delete(MedicoController.eliminarDisponibilidad);
 
+router
+  .route('/:medicoId/pacientes/:pacienteId/turnos')
+  .get(MedicoController.consultarTurnosDePaciente);
+
+router
+  .route('/:medicoId/turnos/:turnoId')
+  .patch(MedicoController.actualizarTurno);
+
 export default router;

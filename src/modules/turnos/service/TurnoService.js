@@ -20,7 +20,6 @@ import {
     parsearFechaHoraArgentina,
 } from '../../../utils/dateTime.js';
 
-
 function faltaMasDeUnaHora(fechaHoraTurno) {
     const ahora = new Date();
     const unaHoraEnMs = 60 * 60 * 1000;
@@ -52,6 +51,16 @@ export class TurnoService {
 
     findByPacienteId(pacienteId) {
       return this.turnoRepository.findByPacienteId(pacienteId);
+    }
+
+    findByMedicoId(medicoId) {
+      return this.turnoRepository.findByMedicoId(medicoId);
+    }
+
+    findByMedicoAndPacienteId(medicoId, pacienteId) {
+      return this.turnoRepository
+        .findByMedicoId(medicoId)
+        .filter(turno => turno.paciente?.id === pacienteId);
     }
 
     crearTurno(datosTurno) {
@@ -99,6 +108,18 @@ export class TurnoService {
         return this.darDeBajaTurno(
             turno.id,
             { id: paciente.id, nombre: paciente.nombre },
+            motivo
+        );
+    }
+
+    cancelarTurnoMedico(medico, turnoId, motivo) {
+        this.validarMotivo(motivo);
+
+        const turno = this.obtenerTurnoDelMedico(turnoId, medico.id);
+
+        return this.darDeBajaTurno(
+            turno.id,
+            { id: medico.id, nombre: medico.nombre },
             motivo
         );
     }
@@ -307,10 +328,32 @@ export class TurnoService {
         return turno;
     }
 
+    obtenerTurnoDelMedico(turnoId, medicoId) {
+        const turno = this.findById(turnoId);
+
+        if (turno.medico?.id !== medicoId) {
+            throw new TurnoInvalidoError('El turno no pertenece al médico indicado');
+        }
+
+        return turno;
+    }
+
     validarMotivo(motivo) {
         if (typeof motivo !== 'string' || motivo.trim() === '') {
             throw new TurnoInvalidoError('El motivo de cancelación es obligatorio');
         }
+    }
+
+    marcarTurnoRealizado(turnoId, usuario = { id: 'sistema', nombre: 'Sistema' }) {
+        const turno = this.findById(turnoId);
+
+        turno.actualizarEstado(
+            EstadoTurno.REALIZADO,
+            usuario,
+            'Turno realizado'
+        );
+
+        return this.turnoRepository.save(turno);
     }
 
     actualizarTurno(turnoId, cambios) {

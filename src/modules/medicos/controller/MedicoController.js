@@ -53,4 +53,28 @@ export const MedicoController = {
             next(error);
         }
     },
+
+    consultarTurnosDePaciente(req, res, next) {
+        try {
+            const { medicoId, pacienteId } = req.params;
+
+            const turnos = MedicoService.consultarTurnosDePaciente(medicoId, pacienteId);
+
+            res.status(200).json(turnos);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    actualizarTurno(req, res, next) {
+        try {
+            const { medicoId, turnoId } = req.params;
+
+            const turno = MedicoService.actualizarTurno(medicoId, turnoId, req.body);
+
+            res.status(200).json(turno);
+        } catch (error) {
+            next(error);
+        }
+    },
 };

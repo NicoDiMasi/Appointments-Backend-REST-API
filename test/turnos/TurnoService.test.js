@@ -368,6 +368,24 @@ describe('TurnoService', () => {
         expect(resultado.historialEstados[0].motivo).toBe('El paciente canceló el turno');
     });
 
+    test('debería marcar un turno como realizado', () => {
+        const turno = crearTurno({
+            id: 'tur-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '08:40'),
+        });
+
+        turnoRepository.save(turno);
+
+        const resultado = turnoService.marcarTurnoRealizado('tur-001', {
+            id: 'med-001',
+            nombre: 'Ana Gómez',
+        });
+
+        expect(resultado.estado).toBe(EstadoTurno.REALIZADO);
+        expect(resultado.historialEstados).toHaveLength(1);
+        expect(resultado.historialEstados[0].estado).toBe(EstadoTurno.REALIZADO);
+    });
+
     test('debería rechazar la baja de un turno inexistente', () => {
         expect(() => {
             turnoService.darDeBajaTurno(

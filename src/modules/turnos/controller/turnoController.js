@@ -82,6 +82,19 @@ export class TurnoController {
         return this.darDeBaja(req, res, next);
       }
 
+      if (req.body.estado === EstadoTurno.REALIZADO) {
+        const usuario = req.body.usuario ?? {
+          id: 'sistema',
+          nombre: 'Sistema',
+        };
+        const turnoRealizado = this.turnoService.marcarTurnoRealizado(
+          req.params.id,
+          usuario
+        );
+
+        return res.status(200).json(turnoRealizado);
+      }
+
       const turnoActualizado = this.turnoService.actualizarTurno(
         req.params.id,
         req.body

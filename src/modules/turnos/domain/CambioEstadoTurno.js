@@ -46,7 +46,9 @@ export class CambioEstadoTurno {
     return {
       fechaHoraIngreso: formatearFechaHoraArgentina(this.fechaHoraIngreso),
       estado: this.estado,
-      turno: this.turno,
+      turno: {
+        id: this.turno.id,
+      },
       usuario: this.usuario,
       motivo: this.motivo,
     };
