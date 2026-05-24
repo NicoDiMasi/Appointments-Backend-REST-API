@@ -257,7 +257,8 @@ describe('TurnoService', () => {
             especialidadId: 'esp-001',
         });
 
-        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560, 580]);
+        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560]);
+        expect(turnos.every(turno => turno.duracionTurno === 40)).toBe(true);
     });
 
     test('debería consultar disponibilidad para una práctica del médico', () => {

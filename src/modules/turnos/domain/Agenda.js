@@ -24,6 +24,7 @@ export class Agenda {
   generarTurnosPara(prestacion, medico, tipoPrestacion) {
     const turnosGenerados = [];
     const cantidadModulos = calcularCantidadModulos(this.obtenerDuracionPrestacion(prestacion));
+    const duracionTurno = cantidadModulos * DURACION_MODULO_EN_MINUTOS;
 
     medico.disponibilidades.forEach((disponibilidad) => {
       const fechaDisponibilidad = this.obtenerProximaFechaParaDia(
@@ -33,7 +34,7 @@ export class Agenda {
       let inicioTurno = this.obtenerMinutosDelDia(disponibilidad.horaDesde);
       const finDisponibilidad = this.obtenerMinutosDelDia(disponibilidad.horaHasta);
 
-      while (inicioTurno + DURACION_MODULO_EN_MINUTOS <= finDisponibilidad) {
+      while (inicioTurno + duracionTurno <= finDisponibilidad) {
         const fechaHoraTurno = this.crearFechaConMinutos(
           fechaDisponibilidad,
           inicioTurno
@@ -50,7 +51,7 @@ export class Agenda {
           estado: EstadoTurno.DISPONIBLE,
           historialEstados: [],
           costo: prestacion.costoConsulta ?? prestacion.costo,
-          duracionTurno: DURACION_MODULO_EN_MINUTOS,
+          duracionTurno,
           modulosRequeridos: cantidadModulos,
         });
 

@@ -80,9 +80,9 @@ describe('Agenda', () => {
 
     const turnos = agenda.generarTurnosParaEspecialidad(especialidad, medico);
 
-    expect(turnos).toHaveLength(3);
-    expect(turnos.map(turno => turno.inicioTurno())).toEqual([480, 500, 520]);
-    expect(turnos.every(turno => turno.duracionTurno === 20)).toBe(true);
+    expect(turnos).toHaveLength(2);
+    expect(turnos.map(turno => turno.inicioTurno())).toEqual([480, 500]);
+    expect(turnos.every(turno => turno.duracionTurno === 40)).toBe(true);
     expect(turnos.every(turno => turno.modulosRequeridos === 2)).toBe(true);
   });
 
