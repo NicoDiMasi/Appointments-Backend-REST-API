@@ -108,6 +108,17 @@ El modulo esta montado en `/medicos`.
 | GET | `/medicos/:medicoId/pacientes/:pacienteId/turnos` | Consulta turnos de un paciente con ese medico |
 | PATCH | `/medicos/:medicoId/turnos/:turnoId` | Actualiza un turno del medico; permite cancelar con motivo |
 
+### Obras sociales
+
+El modulo esta montado en `/obras-sociales`.
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| GET | `/obras-sociales` | Lista obras sociales con planes y coberturas |
+| GET | `/obras-sociales/:obraSocialId` | Busca una obra social por ID |
+| GET | `/obras-sociales/:obraSocialId/planes` | Lista planes de una obra social |
+| GET | `/obras-sociales/:obraSocialId/planes/:planId` | Busca un plan por ID |
+
 ### Turnos
 
 El modulo esta montado en `/turnos`.
@@ -173,6 +184,13 @@ Los datos viven en memoria. Al reiniciar el servidor vuelven a su estado inicial
 | `pac-001` | Juan Lopez | 30111222 | OSDE | 210 |
 | `pac-002` | Maria Fernandez | 32555666 | Swiss Medical | SMG20 |
 | `pac-003` | Pedro Ramirez | 28999888 | Sin obra social | Sin plan |
+
+### Obras sociales
+
+| ID | Nombre | Planes |
+| --- | --- | --- |
+| `os-001` | OSDE | `plan-210` 210 |
+| `os-002` | Swiss Medical | `plan-smg20` SMG20 |
 
 ### Turnos
 
