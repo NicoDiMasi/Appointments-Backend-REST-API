@@ -1,11 +1,15 @@
 import { medicoRepository } from '../repository/MedicoRepository.js';
 import { DisponibilidadHoraria } from '../domain/DisponibilidadHoraria.js';
+import { Especialidad } from '../domain/Especialidad.js';
+import { Practica } from '../domain/Practica.js';
 import { TurnoService } from '../../turnos/service/TurnoService.js';
 import { turnoRepository } from '../../turnos/repository/TurnoRepository.js';
 import {
   MedicoNotFoundError,
   DisponibilidadNotFoundError,
   DisponibilidadInvalidaError,
+  ServicioNotFoundError,
+  ServicioInvalidoError,
 } from '../errors/MedicoErrors.js';
 
 function horaAMinutos(hora) {
@@ -15,7 +19,85 @@ function horaAMinutos(hora) {
 
 const turnoService = new TurnoService(turnoRepository);
 
+function obtenerColeccionServicios(medico, tipo) {
+  if (tipo === 'especialidad') {
+    return {
+      coleccion: medico.especialidades,
+      crear: datos => Especialidad.create(datos),
+    };
+  }
+
+  if (tipo === 'practica') {
+    return {
+      coleccion: medico.practicas,
+      crear: datos => Practica.create(datos),
+    };
+  }
+
+  throw new ServicioInvalidoError("tipo debe ser 'especialidad' o 'practica'");
+}
+//SERVICIO: Especialidad o Práctica
 export const MedicoService = {
+  listarServicios(medicoId) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    return {
+      especialidades: medico.especialidades,
+      practicas: medico.practicas,
+    };
+  },
+
+  agregarServicio(medicoId, datos) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    const { tipo, ...datosServicio } = datos;
+    const { coleccion, crear } = obtenerColeccionServicios(medico, tipo);
+
+    if (coleccion.some(servicio => servicio.id === datosServicio.id)) {
+      throw new ServicioInvalidoError(`Ya existe un servicio de tipo '${tipo}' con id '${datosServicio.id}'`);
+    }
+
+    const servicio = crear(datosServicio);
+    coleccion.push(servicio);
+    medicoRepository.save(medico);
+
+    return servicio;
+  },
+
+  actualizarServicio(medicoId, tipo, servicioId, cambios) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    const { coleccion, crear } = obtenerColeccionServicios(medico, tipo);
+    const index = coleccion.findIndex(servicio => servicio.id === servicioId);
+    if (index === -1) throw new ServicioNotFoundError(tipo, servicioId);
+
+    const servicioActualizado = crear({
+      ...coleccion[index],
+      ...cambios,
+      id: servicioId,
+    });
+
+    coleccion[index] = servicioActualizado;
+    medicoRepository.save(medico);
+
+    return servicioActualizado;
+  },
+
+  eliminarServicio(medicoId, tipo, servicioId) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    const { coleccion } = obtenerColeccionServicios(medico, tipo);
+    const index = coleccion.findIndex(servicio => servicio.id === servicioId);
+    if (index === -1) throw new ServicioNotFoundError(tipo, servicioId);
+
+    coleccion.splice(index, 1);
+    medicoRepository.save(medico);
+  },
+
   listarDisponibilidades(medicoId) {
     const medico = medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);

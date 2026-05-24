@@ -96,6 +96,10 @@ El modulo esta montado en `/medicos`.
 
 | Metodo | Ruta | Descripcion |
 | --- | --- | --- |
+| GET | `/medicos/:medicoId/servicios` | Lista especialidades y practicas ofrecidas por el medico |
+| POST | `/medicos/:medicoId/servicios` | Agrega una especialidad o practica al medico |
+| PATCH | `/medicos/:medicoId/servicios/:tipo/:servicioId` | Modifica una especialidad o practica del medico |
+| DELETE | `/medicos/:medicoId/servicios/:tipo/:servicioId` | Elimina una especialidad o practica del medico |
 | GET | `/medicos/:medicoId/disponibilidades` | Lista disponibilidades horarias del medico |
 | POST | `/medicos/:medicoId/disponibilidades` | Agrega una disponibilidad horaria |
 | PATCH | `/medicos/:medicoId/disponibilidades/:diaSemana` | Actualiza una disponibilidad |
@@ -288,6 +292,60 @@ curl -X PATCH http://localhost:3000/pacientes/pac-001/turnos/tur-pac-001/cambio 
   }'
 ```
 
+### Gestion de servicios medicos
+
+Los servicios del medico pueden ser `especialidad` o `practica`.
+
+```bash
+curl http://localhost:3000/medicos/med-001/servicios
+```
+
+Alta de una especialidad:
+
+```bash
+curl -X POST http://localhost:3000/medicos/med-001/servicios \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo": "especialidad",
+    "id": "esp-010",
+    "nombre": "Dermatologia",
+    "duracionTurnoEnMins": 20,
+    "costoConsulta": 4500
+  }'
+```
+
+Alta de una practica:
+
+```bash
+curl -X POST http://localhost:3000/medicos/med-001/servicios \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo": "practica",
+    "id": "pra-010",
+    "codigo": "ECO",
+    "nombre": "Ecografia",
+    "duracionTurnoEnMins": 40,
+    "costo": 8000
+  }'
+```
+
+Modificacion:
+
+```bash
+curl -X PATCH http://localhost:3000/medicos/med-001/servicios/practica/pra-010 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "costo": 8500,
+    "duracionTurnoEnMins": 60
+  }'
+```
+
+Baja:
+
+```bash
+curl -X DELETE http://localhost:3000/medicos/med-001/servicios/practica/pra-010
+```
+
 ### CRUD de disponibilidades medicas
 
 ```bash
@@ -416,7 +474,7 @@ Cliente HTTP
 
 | Archivo | Cubre |
 | --- | --- |
-| `test/medicos/MedicoService.test.js` | Disponibilidades medicas, turnos vistos por medico y disponibilidad por prestacion |
+| `test/medicos/MedicoService.test.js` | Servicios medicos, disponibilidades medicas, turnos vistos por medico y disponibilidad por prestacion |
 | `test/pacientes/PacienteTurnosService.test.js` | Reserva, cancelacion, historial y cambio de turnos de pacientes |
 | `test/turnos/Agenda.test.js` | Generacion de turnos, modulos y validacion de agenda |
 | `test/turnos/TurnoService.test.js` | CRUD de turnos, disponibilidad, cercanos, cancelacion y realizado |

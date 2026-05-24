@@ -4,6 +4,16 @@ import { MedicoController } from './controller/MedicoController.js';
 const router = Router();
 
 router
+  .route('/:medicoId/servicios')
+  .get(MedicoController.listarServicios)
+  .post(MedicoController.agregarServicio);
+
+router
+  .route('/:medicoId/servicios/:tipo/:servicioId')
+  .patch(MedicoController.actualizarServicio)
+  .delete(MedicoController.eliminarServicio);
+
+router
   .route('/:medicoId/disponibilidades')
   .get(MedicoController.listarDisponibilidades)
   .post(MedicoController.agregarDisponibilidad);

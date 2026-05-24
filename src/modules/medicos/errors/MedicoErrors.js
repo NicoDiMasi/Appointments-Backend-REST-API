@@ -18,3 +18,15 @@ export class DisponibilidadInvalidaError extends AppError {
     super(mensaje, 400);
   }
 }
+
+export class ServicioNotFoundError extends AppError {
+  constructor(tipo, servicioId) {
+    super(`No existe servicio de tipo '${tipo}' con id '${servicioId}'`, 404);
+  }
+}
+
+export class ServicioInvalidoError extends AppError {
+  constructor(mensaje) {
+    super(mensaje, 400);
+  }
+}

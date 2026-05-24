@@ -2,6 +2,59 @@ import { MedicoService } from '../service/MedicoService.js';
 
 
 export const MedicoController = {
+    listarServicios(req, res, next) {
+        try {
+            const { medicoId } = req.params;
+
+            const servicios = MedicoService.listarServicios(medicoId);
+
+            res.status(200).json(servicios);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    agregarServicio(req, res, next) {
+        try {
+            const { medicoId } = req.params;
+
+            const servicio = MedicoService.agregarServicio(medicoId, req.body);
+
+            res.status(201).json(servicio);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    actualizarServicio(req, res, next) {
+        try {
+            const { medicoId, tipo, servicioId } = req.params;
+
+            const servicio = MedicoService.actualizarServicio(
+                medicoId,
+                tipo,
+                servicioId,
+                req.body
+            );
+
+            res.status(200).json(servicio);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    eliminarServicio(req, res, next) {
+        try {
+            const { medicoId, tipo, servicioId } = req.params;
+
+            MedicoService.eliminarServicio(medicoId, tipo, servicioId);
+
+            res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    },
+
     listarDisponibilidades(req, res, next) {
         try {
             const { medicoId } = req.params;

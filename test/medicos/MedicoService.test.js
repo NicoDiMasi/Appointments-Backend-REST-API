@@ -87,6 +87,76 @@ describe('MedicoService - Disponibilidades', () => {
         expect(disponibilidades).toContainEqual(nuevaDisponibilidad);
     });
 
+    test('deberia listar los servicios de un medico', () => {
+        const servicios = MedicoService.listarServicios('med-001');
+
+        expect(servicios.especialidades).toHaveLength(2);
+        expect(servicios.practicas).toHaveLength(1);
+        expect(servicios.especialidades[0].id).toBe('esp-001');
+        expect(servicios.practicas[0].id).toBe('pra-001');
+    });
+
+    test('deberia agregar una especialidad como servicio', () => {
+        const servicio = MedicoService.agregarServicio('med-001', {
+            tipo: 'especialidad',
+            id: 'esp-010',
+            nombre: 'Dermatologia',
+            duracionTurnoEnMins: 20,
+            costoConsulta: 4500,
+        });
+
+        expect(servicio.id).toBe('esp-010');
+
+        const medico = medicoRepository.findById('med-001');
+        expect(medico.especialidades).toContainEqual(servicio);
+    });
+
+    test('deberia agregar una practica como servicio', () => {
+        const servicio = MedicoService.agregarServicio('med-001', {
+            tipo: 'practica',
+            id: 'pra-010',
+            codigo: 'ECO',
+            nombre: 'Ecografia',
+            duracionTurnoEnMins: 40,
+            costo: 8000,
+        });
+
+        expect(servicio.id).toBe('pra-010');
+
+        const medico = medicoRepository.findById('med-001');
+        expect(medico.practicas).toContainEqual(servicio);
+    });
+
+    test('deberia rechazar un servicio duplicado', () => {
+        expect(() => {
+            MedicoService.agregarServicio('med-001', {
+                tipo: 'especialidad',
+                id: 'esp-001',
+                nombre: 'Cardiologia',
+                duracionTurnoEnMins: 30,
+                costoConsulta: 5000,
+            });
+        }).toThrow("Ya existe un servicio de tipo 'especialidad' con id 'esp-001'");
+    });
+
+    test('deberia actualizar un servicio existente', () => {
+        const servicio = MedicoService.actualizarServicio('med-001', 'practica', 'pra-001', {
+            costo: 6500,
+            duracionTurnoEnMins: 60,
+        });
+
+        expect(servicio.id).toBe('pra-001');
+        expect(servicio.costo).toBe(6500);
+        expect(servicio.duracionTurnoEnMins).toBe(60);
+    });
+
+    test('deberia eliminar un servicio existente', () => {
+        MedicoService.eliminarServicio('med-001', 'especialidad', 'esp-004');
+
+        const medico = medicoRepository.findById('med-001');
+        expect(medico.especialidades.map(especialidad => especialidad.id)).not.toContain('esp-004');
+    });
+
     test('debería rechazar una disponibilidad con horaDesde posterior a horaHasta', () => {
         const disponibilidadInvalida = {
             diaSemana: 'MARTES',
