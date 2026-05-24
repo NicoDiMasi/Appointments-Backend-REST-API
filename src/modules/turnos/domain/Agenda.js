@@ -49,7 +49,7 @@ export class Agenda {
           practica: tipoPrestacion === 'practica' ? prestacion : null,
           estado: EstadoTurno.DISPONIBLE,
           historialEstados: [],
-          costo: prestacion.costoConsulta,
+          costo: prestacion.costoConsulta ?? prestacion.costo,
           duracionTurno: DURACION_MODULO_EN_MINUTOS,
           modulosRequeridos: cantidadModulos,
         });

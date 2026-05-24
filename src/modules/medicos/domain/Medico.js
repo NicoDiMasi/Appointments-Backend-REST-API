@@ -2,11 +2,12 @@ import { DisponibilidadHoraria } from './DisponibilidadHoraria.js';
 import { DisponibilidadInvalidaError } from '../errors/MedicoErrors.js';
 
 export class Medico {
-  constructor({ id, matricula, nombre, especialidades, disponibilidades }) {
+  constructor({ id, matricula, nombre, especialidades, practicas, disponibilidades }) {
     this.id = id;
     this.matricula = matricula;
     this.nombre = nombre;
     this.especialidades = especialidades ?? [];
+    this.practicas = practicas ?? [];
     this.disponibilidades = disponibilidades ?? [];
   }
 
@@ -23,7 +24,7 @@ export class Medico {
     this.disponibilidades.push(disponibilidad);
   }
 
-  static create({ id, matricula, nombre, especialidades, disponibilidades }) {
+  static create({ id, matricula, nombre, especialidades, practicas, disponibilidades }) {
     if (!id || typeof id !== 'string' || id.trim() === '') {
       throw new Error('El id del médico es obligatorio');
     }
@@ -38,6 +39,7 @@ export class Medico {
       matricula,
       nombre,
       especialidades: especialidades ?? [],
+      practicas: practicas ?? [],
       disponibilidades: disponibilidades ?? [],
     });
   }

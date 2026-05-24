@@ -129,6 +129,7 @@ El modulo de medicos esta montado en:
 | POST | `/medicos/:medicoId/disponibilidades` | Agrega una disponibilidad a un medico |
 | PATCH | `/medicos/:medicoId/disponibilidades/:diaSemana` | Actualiza una disponibilidad existente |
 | DELETE | `/medicos/:medicoId/disponibilidades/:diaSemana` | Elimina una disponibilidad existente |
+| GET | `/medicos/:medicoId/disponibilidades-turnos` | Consulta disponibilidad del medico para una especialidad o practica |
 | GET | `/medicos/:medicoId/pacientes/:pacienteId/turnos` | Consulta turnos de un paciente con ese medico |
 | PATCH | `/medicos/:medicoId/turnos/:turnoId` | Actualiza un turno del medico. Para cancelarlo, enviar `estado: "CANCELADO"` y `motivo` |
 
@@ -499,6 +500,12 @@ curl "http://localhost:3000/turnos/disponibilidades?medicoId=med-001&fechaHora=2
 
 La respuesta indica si el horario esta disponible, cuantos modulos requiere la prestacion y que turnos cercanos existen para ese medico.
 
+Consultar disponibilidad de un medico para una practica:
+
+```bash
+curl "http://localhost:3000/turnos/disponibilidades?medicoId=med-001&fechaHora=2026-05-25T09:20:00.000-03:00&tipoPrestacion=practica&practicaId=pra-001"
+```
+
 Generar turnos disponibles para un medico y especialidad:
 
 ```bash
@@ -668,6 +675,18 @@ Eliminar disponibilidad:
 
 ```bash
 curl -X DELETE http://localhost:3000/medicos/med-001/disponibilidades/MARTES
+```
+
+Consultar disponibilidad del medico para una especialidad:
+
+```bash
+curl "http://localhost:3000/medicos/med-001/disponibilidades-turnos?fechaHora=2026-05-25T09:20:00.000-03:00&especialidadId=esp-001"
+```
+
+Consultar disponibilidad del medico para una practica:
+
+```bash
+curl "http://localhost:3000/medicos/med-001/disponibilidades-turnos?fechaHora=2026-05-25T09:20:00.000-03:00&tipoPrestacion=practica&practicaId=pra-001"
 ```
 
 Consultar turnos de un paciente con un medico:

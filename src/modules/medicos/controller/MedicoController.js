@@ -77,4 +77,19 @@ export const MedicoController = {
             next(error);
         }
     },
+
+    consultarDisponibilidadTurno(req, res, next) {
+        try {
+            const { medicoId } = req.params;
+
+            const disponibilidad = MedicoService.consultarDisponibilidadTurno(
+                medicoId,
+                req.query
+            );
+
+            res.status(200).json(disponibilidad);
+        } catch (error) {
+            next(error);
+        }
+    },
 };

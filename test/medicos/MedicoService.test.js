@@ -173,4 +173,27 @@ describe('MedicoService - Disponibilidades', () => {
         expect(cancelado.historialEstados[0].motivo).toBe('El médico no puede atender');
         expect(cancelado.historialEstados[0].usuario.id).toBe('med-001');
     });
+
+    test('debería consultar disponibilidad del médico para una especialidad', () => {
+        const resultado = MedicoService.consultarDisponibilidadTurno('med-001', {
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:20').toISOString(),
+            especialidadId: 'esp-001',
+        });
+
+        expect(resultado.disponible).toBe(true);
+        expect(resultado.medicoId).toBe('med-001');
+        expect(resultado.duracionPrestacion).toBe(30);
+    });
+
+    test('debería consultar disponibilidad del médico para una práctica', () => {
+        const resultado = MedicoService.consultarDisponibilidadTurno('med-001', {
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:20').toISOString(),
+            tipoPrestacion: 'practica',
+            practicaId: 'pra-001',
+        });
+
+        expect(resultado.disponible).toBe(true);
+        expect(resultado.medicoId).toBe('med-001');
+        expect(resultado.duracionPrestacion).toBe(45);
+    });
 });

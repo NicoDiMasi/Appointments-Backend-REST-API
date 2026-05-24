@@ -14,6 +14,10 @@ router
   .delete(MedicoController.eliminarDisponibilidad);
 
 router
+  .route('/:medicoId/disponibilidades-turnos')
+  .get(MedicoController.consultarDisponibilidadTurno);
+
+router
   .route('/:medicoId/pacientes/:pacienteId/turnos')
   .get(MedicoController.consultarTurnosDePaciente);
 

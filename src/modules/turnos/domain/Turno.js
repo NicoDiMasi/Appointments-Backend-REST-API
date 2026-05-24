@@ -16,6 +16,7 @@ function copiarMedico(medico) { //Esto evita que se modifique el turno ya creado
     return {
         ...medico,
         especialidades: [...(medico.especialidades ?? [])],
+        practicas: [...(medico.practicas ?? [])],
         disponibilidades: (medico.disponibilidades ?? []).map(disponibilidad => ({
             ...disponibilidad,
         })),

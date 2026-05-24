@@ -260,6 +260,31 @@ describe('TurnoService', () => {
         expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560, 580]);
     });
 
+    test('debería consultar disponibilidad para una práctica del médico', () => {
+        const resultado = turnoService.consultarDisponibilidad({
+            medicoId: 'med-001',
+            fechaHora: proximaFechaParaDiaYHora('LUNES', '09:20').toISOString(),
+            tipoPrestacion: 'practica',
+            practicaId: 'pra-001',
+        });
+
+        expect(resultado.disponible).toBe(true);
+        expect(resultado.duracionPrestacion).toBe(45);
+        expect(resultado.modulosRequeridos).toBe(3);
+        expect(resultado.duracionTurno).toBe(60);
+    });
+
+    test('debería rechazar disponibilidad para una práctica que el médico no realiza', () => {
+        expect(() => {
+            turnoService.consultarDisponibilidad({
+                medicoId: 'med-001',
+                fechaHora: proximaFechaParaDiaYHora('LUNES', '09:20').toISOString(),
+                tipoPrestacion: 'practica',
+                practicaId: 'pra-002',
+            });
+        }).toThrow("El médico no realiza la práctica 'pra-002'");
+    });
+
     test('modificar la disponibilidad no debería cambiar turnos existentes', () => {
         const fechaPasada = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const turnoExistente = crearTurno({

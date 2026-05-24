@@ -192,7 +192,7 @@ export class TurnoService {
         };
     }
 
-    consultarDisponibilidad({ medicoId, fechaHora, duracionTurnoEnMins, especialidadId, ventanaMinutos = 60 }) {
+    consultarDisponibilidad({ medicoId, fechaHora, duracionTurnoEnMins, especialidadId, practicaId, tipoPrestacion, ventanaMinutos = 60 }) {
         const medico = this.medicoRepository.findById(medicoId);
 
         if (!medico) {
@@ -205,25 +205,13 @@ export class TurnoService {
             throw new TurnoInvalidoError('La fecha y hora del turno no es válida');
         }
 
-        const especialidad = especialidadId
-            ? medico.especialidades.find(e => e.id === especialidadId)
-            : null;
-
-        if (especialidadId && !especialidad) {
-            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${especialidadId}'`);
-        }
-
-        const duracionPrestacion = especialidad?.duracionTurnoEnMins ?? Number(duracionTurnoEnMins);
-
-        if (!Number.isInteger(duracionPrestacion) || duracionPrestacion <= 0) {
-            throw new TurnoInvalidoError('La duración del turno debe ser un entero positivo');
-        }
-
-        const prestacion = especialidad ?? {
-            id: 'prestacion-consultada',
-            nombre: 'Prestación consultada',
-            duracionTurnoEnMins: duracionPrestacion,
-        };
+        const { prestacion, tipo, duracionPrestacion } = this.resolverPrestacion({
+            medico,
+            especialidadId,
+            practicaId,
+            tipoPrestacion,
+            duracionTurnoEnMins,
+        });
 
         const turnoSolicitado = Turno.create({
             id: 'turno-consultado',
@@ -231,7 +219,8 @@ export class TurnoService {
             paciente: null,
             fechaHora: fechaHoraSolicitada,
             sede: null,
-            especialidad: prestacion,
+            especialidad: tipo === 'especialidad' ? prestacion : null,
+            practica: tipo === 'practica' ? prestacion : null,
             estado: EstadoTurno.DISPONIBLE,
             historialEstados: [],
             costo: 0,
@@ -254,23 +243,26 @@ export class TurnoService {
         );
     }
 
-    generarTurnosDisponibles({ medicoId, especialidadId }) {
+    generarTurnosDisponibles({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins }) {
         const medico = this.medicoRepository.findById(medicoId);
 
         if (!medico) {
             throw new MedicoNotFoundError(medicoId);
         }
 
-        const especialidad = medico.especialidades.find(e => e.id === especialidadId);
-
-        if (!especialidad) {
-            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${especialidadId}'`);
-        }
-
+        const { prestacion, tipo } = this.resolverPrestacion({
+            medico,
+            especialidadId,
+            practicaId,
+            tipoPrestacion,
+            duracionTurnoEnMins,
+        });
         const turnosDelMedico = this.turnoRepository.findByMedicoId(medicoId);
+        const turnosGenerados = tipo === 'practica'
+            ? this.agenda.generarTurnosParaPractica(prestacion, medico)
+            : this.agenda.generarTurnosParaEspecialidad(prestacion, medico);
 
-        return this.agenda
-            .generarTurnosParaEspecialidad(especialidad, medico)
+        return turnosGenerados
             .filter(turno => this.agenda.estaDisponible(turno, turnosDelMedico));
     }
 
@@ -342,6 +334,62 @@ export class TurnoService {
         if (typeof motivo !== 'string' || motivo.trim() === '') {
             throw new TurnoInvalidoError('El motivo de cancelación es obligatorio');
         }
+    }
+
+    resolverPrestacion({ medico, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins }) {
+        const consultaPractica = tipoPrestacion === 'practica' || Boolean(practicaId);
+
+        if (consultaPractica) {
+            const practica = practicaId
+                ? medico.practicas.find(p => p.id === practicaId)
+                : null;
+
+            if (practicaId && !practica) {
+                throw new TurnoInvalidoError(`El médico no realiza la práctica '${practicaId}'`);
+            }
+
+            const duracionPrestacion = practica?.duracionTurnoEnMins ?? Number(duracionTurnoEnMins);
+
+            if (!Number.isInteger(duracionPrestacion) || duracionPrestacion <= 0) {
+                throw new TurnoInvalidoError('La duración de la práctica debe ser un entero positivo');
+            }
+
+            return {
+                tipo: 'practica',
+                prestacion: practica ?? {
+                    id: 'practica-consultada',
+                    codigo: 'PRA-CONSULTADA',
+                    nombre: 'Práctica consultada',
+                    duracionTurnoEnMins: duracionPrestacion,
+                    costo: 0,
+                },
+                duracionPrestacion,
+            };
+        }
+
+        const especialidad = especialidadId
+            ? medico.especialidades.find(e => e.id === especialidadId)
+            : null;
+
+        if (especialidadId && !especialidad) {
+            throw new TurnoInvalidoError(`El médico no atiende la especialidad '${especialidadId}'`);
+        }
+
+        const duracionPrestacion = especialidad?.duracionTurnoEnMins ?? Number(duracionTurnoEnMins);
+
+        if (!Number.isInteger(duracionPrestacion) || duracionPrestacion <= 0) {
+            throw new TurnoInvalidoError('La duración del turno debe ser un entero positivo');
+        }
+
+        return {
+            tipo: 'especialidad',
+            prestacion: especialidad ?? {
+                id: 'prestacion-consultada',
+                nombre: 'Prestación consultada',
+                duracionTurnoEnMins: duracionPrestacion,
+            },
+            duracionPrestacion,
+        };
     }
 
     marcarTurnoRealizado(turnoId, usuario = { id: 'sistema', nombre: 'Sistema' }) {

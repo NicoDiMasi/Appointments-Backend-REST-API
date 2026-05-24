@@ -91,4 +91,14 @@ export const MedicoService = {
 
     return turnoService.actualizarTurno(turnoId, cambios);
   },
+
+  consultarDisponibilidadTurno(medicoId, filtros) {
+    const medico = medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+
+    return turnoService.consultarDisponibilidad({
+      ...filtros,
+      medicoId,
+    });
+  },
 };
