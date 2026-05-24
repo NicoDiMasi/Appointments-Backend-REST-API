@@ -128,7 +128,7 @@ El modulo esta montado en `/turnos`.
 | GET | `/turnos` | Lista turnos |
 | POST | `/turnos` | Crea un turno |
 | GET | `/turnos/disponibilidades` | Consulta disponibilidad para un horario |
-| GET | `/turnos/disponibles` | Genera slots disponibles |
+| GET | `/turnos/disponibles` | Busca slots disponibles por medico, especialidad, practica, sede y rango de fechas |
 | POST | `/turnos/solicitudes` | Solicita un turno y devuelve el analisis de disponibilidad |
 | GET | `/turnos/:id` | Busca un turno por ID |
 | PATCH | `/turnos/:id` | Actualiza un turno; permite cancelar o marcar realizado |
@@ -154,6 +154,7 @@ El modulo esta montado en `/pacientes`.
 
 - Los turnos se organizan en modulos de 20 minutos.
 - Una prestacion puede ocupar uno o mas modulos segun su duracion.
+- La busqueda de turnos disponibles para pacientes permite filtrar por profesional, especialidad, practica, sede y rango de fechas.
 - Al crear, reservar o mover un turno se valida:
   - disponibilidad horaria del medico,
   - inicio alineado al modulo de 20 minutos,
@@ -171,11 +172,19 @@ Los datos viven en memoria. Al reiniciar el servidor vuelven a su estado inicial
 
 ### Medicos
 
-| ID | Nombre | Especialidades | Practicas | Disponibilidades |
-| --- | --- | --- | --- | --- |
-| `med-001` | Ana Gomez | Cardiologia, Clinica Medica | `pra-001` Electrocardiograma | LUNES 08:00-12:00, MIERCOLES 14:00-18:00, VIERNES 09:00-13:00 |
-| `med-002` | Carlos Perez | Neurologia | `pra-002` Electroencefalograma | MARTES 07:00-11:00, JUEVES 15:00-19:00, SABADO 08:00-12:00 |
-| `med-003` | Laura Martinez | Pediatria | `pra-003` Control pediatrico | LUNES 10:00-14:00, MIERCOLES 16:00-20:00, VIERNES 08:30-12:30 |
+| ID | Nombre | Especialidades | Practicas | Sedes | Disponibilidades |
+| --- | --- | --- | --- | --- | --- |
+| `med-001` | Ana Gomez | Cardiologia, Clinica Medica | `pra-001` Electrocardiograma | Sede Central, Sede Norte | LUNES 08:00-12:00, MIERCOLES 14:00-18:00, VIERNES 09:00-13:00 |
+| `med-002` | Carlos Perez | Neurologia | `pra-002` Electroencefalograma | Sede Norte | MARTES 07:00-11:00, JUEVES 15:00-19:00, SABADO 08:00-12:00 |
+| `med-003` | Laura Martinez | Pediatria | `pra-003` Control pediatrico | Sede Sur | LUNES 10:00-14:00, MIERCOLES 16:00-20:00, VIERNES 08:30-12:30 |
+
+### Sedes
+
+| ID | Nombre | Direccion |
+| --- | --- | --- |
+| `sede-001` | Sede Central | Av. Siempre Viva 123 |
+| `sede-002` | Sede Norte | Calle Falsa 456 |
+| `sede-003` | Sede Sur | San Martin 789 |
 
 ### Pacientes
 
@@ -234,6 +243,20 @@ Respuesta esperada parcial:
   "modulosRequeridos": 3,
   "turnosCercanos": []
 }
+```
+
+### Buscar turnos disponibles para pacientes
+
+Por especialidad, sede y rango de fechas:
+
+```bash
+curl "http://localhost:3000/turnos/disponibles?especialidadId=esp-001&sedeId=sede-001&fechaDesde=2026-05-25T00:00:00.000-03:00&fechaHasta=2026-05-25T23:59:00.000-03:00"
+```
+
+Por practica con medico especifico:
+
+```bash
+curl "http://localhost:3000/turnos/disponibles?medicoId=med-001&tipoPrestacion=practica&practicaId=pra-001&sedeId=sede-002"
 ```
 
 ### Reservar un turno para un paciente

@@ -20,11 +20,20 @@ export class Agenda {
   generarTurnosParaPractica(practica, medico) {
     return this.generarTurnosPara(practica, medico, 'practica');
   }
+
+  generarTurnosParaEspecialidadEnRango(especialidad, medico, fechaDesde, fechaHasta) {
+    return this.generarTurnosParaEnRango(especialidad, medico, 'especialidad', fechaDesde, fechaHasta);
+  }
+
+  generarTurnosParaPracticaEnRango(practica, medico, fechaDesde, fechaHasta) {
+    return this.generarTurnosParaEnRango(practica, medico, 'practica', fechaDesde, fechaHasta);
+  }
   
   generarTurnosPara(prestacion, medico, tipoPrestacion) {
     const turnosGenerados = [];
     const cantidadModulos = calcularCantidadModulos(this.obtenerDuracionPrestacion(prestacion));
     const duracionTurno = cantidadModulos * DURACION_MODULO_EN_MINUTOS;
+    const sedes = medico.sedes?.length ? medico.sedes : [null];
 
     medico.disponibilidades.forEach((disponibilidad) => {
       const fechaDisponibilidad = this.obtenerProximaFechaParaDia(
@@ -40,26 +49,84 @@ export class Agenda {
           inicioTurno
         );
 
-        const turnoDisponible = Turno.create({
-          id: crypto.randomUUID(),
-          medico,
-          paciente: null,
-          fechaHora: fechaHoraTurno,
-          sede: null,
-          especialidad: tipoPrestacion === 'especialidad' ? prestacion : null,
-          practica: tipoPrestacion === 'practica' ? prestacion : null,
-          estado: EstadoTurno.DISPONIBLE,
-          historialEstados: [],
-          costo: prestacion.costoConsulta ?? prestacion.costo,
-          duracionTurno,
-          modulosRequeridos: cantidadModulos,
-        });
+        sedes.forEach(sede => {
+          const turnoDisponible = Turno.create({
+            id: crypto.randomUUID(),
+            medico,
+            paciente: null,
+            fechaHora: fechaHoraTurno,
+            sede,
+            especialidad: tipoPrestacion === 'especialidad' ? prestacion : null,
+            practica: tipoPrestacion === 'practica' ? prestacion : null,
+            estado: EstadoTurno.DISPONIBLE,
+            historialEstados: [],
+            costo: prestacion.costoConsulta ?? prestacion.costo,
+            duracionTurno,
+            modulosRequeridos: cantidadModulos,
+          });
 
-        turnosGenerados.push(turnoDisponible);
+          turnosGenerados.push(turnoDisponible);
+        });
 
         inicioTurno += DURACION_MODULO_EN_MINUTOS;
       }
     });
+
+    return turnosGenerados;
+  }
+
+  generarTurnosParaEnRango(prestacion, medico, tipoPrestacion, fechaDesde, fechaHasta) {
+    const turnosGenerados = [];
+    const cantidadModulos = calcularCantidadModulos(this.obtenerDuracionPrestacion(prestacion));
+    const duracionTurno = cantidadModulos * DURACION_MODULO_EN_MINUTOS;
+    const sedes = medico.sedes?.length ? medico.sedes : [null];
+    const diasDisponibles = new Set(
+      (medico.disponibilidades ?? []).map(disponibilidad => this.obtenerNumeroDiaSemana(disponibilidad.diaSemana))
+    );
+    const fechaActual = this.crearInicioDia(fechaDesde);
+    const fechaLimite = this.crearInicioDia(fechaHasta);
+
+    while (fechaActual.getTime() <= fechaLimite.getTime()) {
+      const diaSemana = obtenerPartesFechaArgentina(fechaActual).diaSemana;
+
+      if (diasDisponibles.has(diaSemana)) {
+        const disponibilidadesDelDia = medico.disponibilidades.filter(
+          disponibilidad => this.obtenerNumeroDiaSemana(disponibilidad.diaSemana) === diaSemana
+        );
+
+        disponibilidadesDelDia.forEach(disponibilidad => {
+          let inicioTurno = this.obtenerMinutosDelDia(disponibilidad.horaDesde);
+          const finDisponibilidad = this.obtenerMinutosDelDia(disponibilidad.horaHasta);
+
+          while (inicioTurno + duracionTurno <= finDisponibilidad) {
+            const fechaHoraTurno = this.crearFechaConMinutos(fechaActual, inicioTurno);
+
+            sedes.forEach(sede => {
+              const turnoDisponible = Turno.create({
+                id: crypto.randomUUID(),
+                medico,
+                paciente: null,
+                fechaHora: fechaHoraTurno,
+                sede,
+                especialidad: tipoPrestacion === 'especialidad' ? prestacion : null,
+                practica: tipoPrestacion === 'practica' ? prestacion : null,
+                estado: EstadoTurno.DISPONIBLE,
+                historialEstados: [],
+                costo: prestacion.costoConsulta ?? prestacion.costo,
+                duracionTurno,
+                modulosRequeridos: cantidadModulos,
+              });
+
+              turnosGenerados.push(turnoDisponible);
+            });
+
+            inicioTurno += DURACION_MODULO_EN_MINUTOS;
+          }
+        });
+      }
+
+      fechaActual.setUTCDate(fechaActual.getUTCDate() + 1);
+    }
 
     return turnosGenerados;
   }
@@ -127,6 +194,16 @@ export class Agenda {
       dia: partesFechaBase.dia,
       horas,
       minutos,
+    });
+  }
+
+  crearInicioDia(fecha) {
+    const partesFecha = obtenerPartesFechaArgentina(fecha);
+
+    return crearFechaHoraArgentina({
+      anio: partesFecha.anio,
+      mes: partesFecha.mes,
+      dia: partesFecha.dia,
     });
   }
 

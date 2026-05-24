@@ -257,8 +257,74 @@ describe('TurnoService', () => {
             especialidadId: 'esp-001',
         });
 
-        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560]);
+        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 540, 560, 560]);
         expect(turnos.every(turno => turno.duracionTurno === 40)).toBe(true);
+        expect(turnos.map(turno => turno.sede.id)).toEqual([
+            'sede-001',
+            'sede-002',
+            'sede-001',
+            'sede-002',
+        ]);
+    });
+
+    test('debería filtrar turnos disponibles por sede', () => {
+        medico.disponibilidades = [{
+            diaSemana: 'LUNES',
+            horaDesde: '09:00',
+            horaHasta: '10:00',
+        }];
+        medicoRepository.save(medico);
+
+        const turnos = turnoService.generarTurnosDisponibles({
+            medicoId: 'med-001',
+            especialidadId: 'esp-001',
+            sedeId: 'sede-001',
+        });
+
+        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560]);
+        expect(turnos.every(turno => turno.sede.id === 'sede-001')).toBe(true);
+    });
+
+    test('debería buscar turnos disponibles para pacientes por especialidad sin indicar médico', () => {
+        medico.disponibilidades = [{
+            diaSemana: 'LUNES',
+            horaDesde: '09:00',
+            horaHasta: '10:00',
+        }];
+        medicoRepository.save(medico);
+
+        const turnos = turnoService.generarTurnosDisponibles({
+            especialidadId: 'esp-001',
+            sedeId: 'sede-002',
+        });
+
+        expect(turnos).toHaveLength(2);
+        expect(turnos.every(turno => turno.medico.id === 'med-001')).toBe(true);
+        expect(turnos.every(turno => turno.especialidad.id === 'esp-001')).toBe(true);
+        expect(turnos.every(turno => turno.sede.id === 'sede-002')).toBe(true);
+    });
+
+    test('debería filtrar turnos disponibles por rango de fechas', () => {
+        const fechaDesde = proximaFechaParaDiaYHora('LUNES', '00:00');
+        const fechaHasta = proximaFechaParaDiaYHora('LUNES', '23:59');
+
+        medico.disponibilidades = [{
+            diaSemana: 'LUNES',
+            horaDesde: '09:00',
+            horaHasta: '10:00',
+        }];
+        medicoRepository.save(medico);
+
+        const turnos = turnoService.generarTurnosDisponibles({
+            medicoId: 'med-001',
+            especialidadId: 'esp-001',
+            sedeId: 'sede-001',
+            fechaDesde: fechaDesde.toISOString(),
+            fechaHasta: fechaHasta.toISOString(),
+        });
+
+        expect(turnos.map(turno => turno.inicioTurno())).toEqual([540, 560]);
+        expect(turnos.every(turno => turno.diaTurno() === 1)).toBe(true);
     });
 
     test('debería consultar disponibilidad para una práctica del médico', () => {

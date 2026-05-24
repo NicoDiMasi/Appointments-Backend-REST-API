@@ -243,27 +243,132 @@ export class TurnoService {
         );
     }
 
-    generarTurnosDisponibles({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins }) {
-        const medico = this.medicoRepository.findById(medicoId);
-
-        if (!medico) {
-            throw new MedicoNotFoundError(medicoId);
-        }
-
-        const { prestacion, tipo } = this.resolverPrestacion({
-            medico,
+    generarTurnosDisponibles({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
+        return this.buscarTurnosDisponiblesParaPaciente({
+            medicoId,
             especialidadId,
             practicaId,
             tipoPrestacion,
             duracionTurnoEnMins,
+            sedeId,
+            fechaDesde,
+            fechaHasta,
         });
-        const turnosDelMedico = this.turnoRepository.findByMedicoId(medicoId);
-        const turnosGenerados = tipo === 'practica'
+    }
+
+    buscarTurnosDisponiblesParaPaciente({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
+        const medicos = this.obtenerMedicosParaBusqueda({
+            medicoId,
+            especialidadId,
+            practicaId,
+            tipoPrestacion,
+        });
+        const rangoFechas = this.resolverRangoFechas({ fechaDesde, fechaHasta });
+
+        return medicos.flatMap(medico => {
+            const { prestacion, tipo } = this.resolverPrestacion({
+                medico,
+                especialidadId,
+                practicaId,
+                tipoPrestacion,
+                duracionTurnoEnMins,
+            });
+            const turnosDelMedico = this.turnosQueBloqueanAgenda(medico.id);
+            const turnosGenerados = this.generarTurnosPorFiltroFecha({
+                prestacion,
+                tipo,
+                medico,
+                rangoFechas,
+            });
+
+            return turnosGenerados
+                .filter(turno => this.agenda.estaDisponible(turno, turnosDelMedico))
+                .filter(turno => this.cumpleFiltroSede(turno, sedeId))
+                .filter(turno => this.cumpleFiltroRangoFecha(turno, rangoFechas));
+        });
+    }
+
+    obtenerMedicosParaBusqueda({ medicoId, especialidadId, practicaId, tipoPrestacion }) {
+        if (medicoId) {
+            const medico = this.medicoRepository.findById(medicoId);
+
+            if (!medico) {
+                throw new MedicoNotFoundError(medicoId);
+            }
+
+            return [medico];
+        }
+
+        const consultaPractica = tipoPrestacion === 'practica' || Boolean(practicaId);
+
+        if (consultaPractica) {
+            return this.medicoRepository
+                .findAll()
+                .filter(medico => medico.practicas.some(practica => practica.id === practicaId));
+        }
+
+        return this.medicoRepository
+            .findAll()
+            .filter(medico => medico.especialidades.some(especialidad => especialidad.id === especialidadId));
+    }
+
+    generarTurnosPorFiltroFecha({ prestacion, tipo, medico, rangoFechas }) {
+        if (rangoFechas) {
+            return tipo === 'practica'
+                ? this.agenda.generarTurnosParaPracticaEnRango(prestacion, medico, rangoFechas.fechaDesde, rangoFechas.fechaHasta)
+                : this.agenda.generarTurnosParaEspecialidadEnRango(prestacion, medico, rangoFechas.fechaDesde, rangoFechas.fechaHasta);
+        }
+
+        return tipo === 'practica'
             ? this.agenda.generarTurnosParaPractica(prestacion, medico)
             : this.agenda.generarTurnosParaEspecialidad(prestacion, medico);
+    }
 
-        return turnosGenerados
-            .filter(turno => this.agenda.estaDisponible(turno, turnosDelMedico));
+    resolverRangoFechas({ fechaDesde, fechaHasta }) {
+        if (!fechaDesde && !fechaHasta) {
+            return null;
+        }
+
+        if (!fechaDesde || !fechaHasta) {
+            throw new TurnoInvalidoError('fechaDesde y fechaHasta deben informarse juntas');
+        }
+
+        const fechaDesdeParseada = parsearFechaHoraArgentina(fechaDesde);
+        const fechaHastaParseada = parsearFechaHoraArgentina(fechaHasta);
+
+        if (Number.isNaN(fechaDesdeParseada.getTime()) || Number.isNaN(fechaHastaParseada.getTime())) {
+            throw new TurnoInvalidoError('El rango de fechas no es valido');
+        }
+
+        if (fechaDesdeParseada.getTime() > fechaHastaParseada.getTime()) {
+            throw new TurnoInvalidoError('fechaDesde debe ser anterior o igual a fechaHasta');
+        }
+
+        return {
+            fechaDesde: fechaDesdeParseada,
+            fechaHasta: fechaHastaParseada,
+        };
+    }
+
+    cumpleFiltroSede(turno, sedeId) {
+        return !sedeId || turno.sede?.id === sedeId;
+    }
+
+    cumpleFiltroRangoFecha(turno, rangoFechas) {
+        if (!rangoFechas) {
+            return true;
+        }
+
+        return (
+            turno.fechaHora.getTime() >= rangoFechas.fechaDesde.getTime() &&
+            turno.fechaHora.getTime() <= rangoFechas.fechaHasta.getTime()
+        );
+    }
+
+    turnosQueBloqueanAgenda(medicoId) {
+        return this.turnoRepository
+            .findByMedicoId(medicoId)
+            .filter(turno => turno.estado !== EstadoTurno.CANCELADO);
     }
 
     buscarTurnosCercanos(turnoSolicitado, turnosDelMedico, ventanaMinutos) {
