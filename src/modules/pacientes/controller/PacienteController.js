@@ -1,6 +1,7 @@
 import { pacienteService } from '../service/PacienteService.js';
 
 export const PacienteController = {
+  
   findAll(req, res, next) {
     try {
       const pacientes = pacienteService.findAll();
