@@ -2,9 +2,9 @@ import { pacienteService } from '../service/PacienteService.js';
 
 export const PacienteController = {
   
-  findAll(req, res, next) {
+  async findAll(req, res, next) {
     try {
-      const pacientes = pacienteService.findAll();
+      const pacientes = await pacienteService.findAll();
 
       return res.status(200).json(pacientes);
     } catch (error) {
@@ -12,9 +12,9 @@ export const PacienteController = {
     }
   },
 
-  findById(req, res, next) {
+  async findById(req, res, next) {
     try {
-      const paciente = pacienteService.findById(req.params.id);
+      const paciente = await pacienteService.findById(req.params.id);
 
       return res.status(200).json(paciente);
     } catch (error) {
@@ -22,9 +22,9 @@ export const PacienteController = {
     }
   },
 
-  create(req, res, next) {
+  async create(req, res, next) {
     try {
-      const paciente = pacienteService.crearPaciente(req.body);
+      const paciente = await pacienteService.crearPaciente(req.body);
 
       return res.status(201).json(paciente);
     } catch (error) {
@@ -32,9 +32,9 @@ export const PacienteController = {
     }
   },
 
-  update(req, res, next) {
+  async update(req, res, next) {
     try {
-      const paciente = pacienteService.actualizarPaciente(req.params.id, req.body);
+      const paciente = await pacienteService.actualizarPaciente(req.params.id, req.body);
 
       return res.status(200).json(paciente);
     } catch (error) {
@@ -42,9 +42,9 @@ export const PacienteController = {
     }
   },
 
-  delete(req, res, next) {
+  async delete(req, res, next) {
     try {
-      pacienteService.eliminarPaciente(req.params.id);
+      await pacienteService.eliminarPaciente(req.params.id);
 
       return res.status(204).send();
     } catch (error) {
@@ -52,9 +52,9 @@ export const PacienteController = {
     }
   },
 
-  reservarTurno(req, res, next) {
+  async reservarTurno(req, res, next) {
     try {
-      const turno = pacienteService.reservarTurno(req.params.id, req.body);
+      const turno = await pacienteService.reservarTurno(req.params.id, req.body);
 
       return res.status(201).json(turno);
     } catch (error) {
@@ -62,9 +62,9 @@ export const PacienteController = {
     }
   },
 
-  cancelarTurno(req, res, next) {
+  async cancelarTurno(req, res, next) {
     try {
-      const turno = pacienteService.cancelarTurno(
+      const turno = await pacienteService.cancelarTurno(
         req.params.id,
         req.params.turnoId,
         req.body.motivo
@@ -76,9 +76,9 @@ export const PacienteController = {
     }
   },
 
-  consultarHistorialTurnos(req, res, next) {
+  async consultarHistorialTurnos(req, res, next) {
     try {
-      const turnos = pacienteService.consultarHistorialTurnos(req.params.id);
+      const turnos = await pacienteService.consultarHistorialTurnos(req.params.id);
 
       return res.status(200).json(turnos);
     } catch (error) {
@@ -86,9 +86,9 @@ export const PacienteController = {
     }
   },
 
-  cambiarTurno(req, res, next) {
+  async cambiarTurno(req, res, next) {
     try {
-      const turno = pacienteService.cambiarTurno(
+      const turno = await pacienteService.cambiarTurno(
         req.params.id,
         req.params.turnoId,
         req.body
