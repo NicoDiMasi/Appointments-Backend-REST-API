@@ -27,7 +27,7 @@ export class PacienteService {
     return paciente;
   }
 
-  async crearPaciente(datosPaciente) {
+   async crearPaciente(datosPaciente) {
     try {
       const paciente = Paciente.create(datosPaciente);
       return await this.repository.save(paciente);
