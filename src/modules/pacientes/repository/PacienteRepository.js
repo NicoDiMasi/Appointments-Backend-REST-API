@@ -1,5 +1,5 @@
 
-import { pacienteModel } from "../../../schemas/PacienteSchema";
+import { pacienteModel } from "../schemas/PacienteSchema.js";
 class PacienteRepository{
   constructor(){
     this.model = pacienteModel
@@ -15,7 +15,9 @@ class PacienteRepository{
 
 
   async save(paciente){
-    const nuevoPaciente = new this.model(paciente);
+    // mapeo el id de la entidad de dominio con el _id que espera mongo,
+    // asi mantenemos nuestros propios ID y no el objeto raro que te devuelve mongo
+    const nuevoPaciente = new this.model({ _id: paciente.id, ...paciente });
     const pacienteCreado = await nuevoPaciente.save()
     return pacienteCreado
   }

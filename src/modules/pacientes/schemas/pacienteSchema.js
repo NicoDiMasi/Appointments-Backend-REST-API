@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Paciente } from '../modules/pacientes/domain/Paciente.js';
+import { Paciente } from '../domain/Paciente.js';
 
 
 const pacienteSchema = new mongoose.Schema({
@@ -33,7 +33,7 @@ const pacienteSchema = new mongoose.Schema({
     }
 },{
     timestamps: true,
-    //versionkey: false,
+    versionkey: false,
     collection: 'pacientes'
 })
 
