@@ -19,6 +19,10 @@ router
   .get(PacienteController.consultarHistorialTurnos)
   .post(PacienteController.reservarTurno);
 
+router
+    .route('/:id/turnos/disponibles')
+    .get(PacienteController.buscarTurnosDisponibles);
+
 router //VER REST
   .route('/:id/turnos/:turnoId/cancelacion')
   .patch(PacienteController.cancelarTurno);

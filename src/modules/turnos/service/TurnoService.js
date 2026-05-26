@@ -19,6 +19,8 @@ import {
     mismaFechaArgentina,
     parsearFechaHoraArgentina,
 } from '../../../utils/dateTime.js';
+import { ObraSocialService } from '../../obrasSociales/service/ObraSocialService.js';
+import { NivelCobertura } from '../../obrasSociales/domain/NivelCobertura.js';
 
 function faltaMasDeUnaHora(fechaHoraTurno) {
     const ahora = new Date();
@@ -29,9 +31,14 @@ function faltaMasDeUnaHora(fechaHoraTurno) {
 
 export class TurnoService {
 
-    constructor(turnoRepository, medicosRepository = medicoRepository) {
+    constructor(
+        turnoRepository,
+        medicosRepository = medicoRepository,
+        obraSocialService = ObraSocialService
+    ) {
         this.turnoRepository = turnoRepository;
         this.medicoRepository = medicosRepository;
+        this.obraSocialService = obraSocialService;
         this.agenda = new Agenda();
     }
 
@@ -256,16 +263,31 @@ export class TurnoService {
         });
     }
 
-    buscarTurnosDisponiblesParaPaciente({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
+    buscarTurnosDisponiblesParaPaciente({
+                                            paciente,
+                                            medicoId,
+                                            especialidadId,
+                                            practicaId,
+                                            tipoPrestacion,
+                                            duracionTurnoEnMins,
+                                            sedeId,
+                                            fechaDesde,
+                                            fechaHasta,
+                                            page = 1,
+                                            limit = 20,
+                                            sortBy = 'fecha',
+                                            sortOrder = 'asc',
+                                        }) {
         const medicos = this.obtenerMedicosParaBusqueda({
             medicoId,
             especialidadId,
             practicaId,
             tipoPrestacion,
         });
+
         const rangoFechas = this.resolverRangoFechas({ fechaDesde, fechaHasta });
 
-        return medicos.flatMap(medico => {
+        const turnos = medicos.flatMap(medico => {
             const { prestacion, tipo } = this.resolverPrestacion({
                 medico,
                 especialidadId,
@@ -273,7 +295,9 @@ export class TurnoService {
                 tipoPrestacion,
                 duracionTurnoEnMins,
             });
+
             const turnosDelMedico = this.turnosQueBloqueanAgenda(medico.id);
+
             const turnosGenerados = this.generarTurnosPorFiltroFecha({
                 prestacion,
                 tipo,
@@ -284,7 +308,15 @@ export class TurnoService {
             return turnosGenerados
                 .filter(turno => this.agenda.estaDisponible(turno, turnosDelMedico))
                 .filter(turno => this.cumpleFiltroSede(turno, sedeId))
-                .filter(turno => this.cumpleFiltroRangoFecha(turno, rangoFechas));
+                .filter(turno => this.cumpleFiltroRangoFecha(turno, rangoFechas))
+                .map(turno => this.agregarCoberturaYMonto(turno, paciente, tipo));
+        });
+
+        return this.aplicarOrdenYPaginacion(turnos, {
+            page,
+            limit,
+            sortBy,
+            sortOrder,
         });
     }
 
@@ -607,5 +639,92 @@ export class TurnoService {
         }
 
         this.turnoRepository.deleteById(turnoId);
+    }
+
+    agregarCoberturaYMonto(turno, paciente, tipoPrestacion) {
+        const prestacion = tipoPrestacion === 'practica'
+            ? turno.practica
+            : turno.especialidad;
+
+        const costoBase = turno.costo ?? prestacion.costoConsulta ?? prestacion.costo ?? 0;
+        const cobertura = this.obtenerNivelCobertura(paciente, prestacion, tipoPrestacion);
+        const montoAbonar = this.calcularMontoAbonar(costoBase, cobertura);
+
+        return {
+            ...turno,
+            cobertura,
+            costoBase,
+            montoAbonar,
+        };
+    }
+
+    obtenerNivelCobertura(paciente, prestacion, tipoPrestacion) {
+        const obraSocialId = this.obtenerId(paciente?.obraSocial);
+        const planId = this.obtenerId(paciente?.plan);
+
+        if (!obraSocialId || !planId) {
+            return NivelCobertura.NO_CUBIERTA;
+        }
+
+        const plan = this.obraSocialService.buscarPlan(obraSocialId, planId);
+
+        const coberturas = tipoPrestacion === 'practica'
+            ? plan.coberturasPractica
+            : plan.coberturasEspecialidad;
+
+        const cobertura = coberturas.find(cobertura =>
+            tipoPrestacion === 'practica'
+                ? cobertura.practica.id === prestacion.id
+                : cobertura.especialidad.id === prestacion.id
+        );
+
+        return cobertura?.nivel ?? NivelCobertura.NO_CUBIERTA;
+    }
+
+    calcularMontoAbonar(costoBase, cobertura) {
+        if (cobertura === NivelCobertura.TOTAL) {
+            return 0;
+        }
+
+        if (cobertura === NivelCobertura.PARCIAL) {
+            return costoBase * 0.5;
+        }
+
+        return costoBase;
+    }
+
+    obtenerId(valor) {
+        if (!valor) {
+            return null;
+        }
+
+        if (typeof valor === 'string') {
+            return valor;
+        }
+
+        return valor.id ?? valor._id ?? null;
+    }
+
+    aplicarOrdenYPaginacion(turnos, { page, limit, sortBy, sortOrder }) {
+        const pagina = Number(page);
+        const cantidad = Number(limit);
+        const direccion = sortOrder === 'desc' ? -1 : 1;
+
+        const ordenados = [...turnos].sort((turnoA, turnoB) => {
+            if (sortBy === 'costo') {
+                return (turnoA.montoAbonar - turnoB.montoAbonar) * direccion;
+            }
+
+            return (turnoA.fechaHora.getTime() - turnoB.fechaHora.getTime()) * direccion;
+        });
+
+        const inicio = (pagina - 1) * cantidad;
+
+        return {
+            page: pagina,
+            limit: cantidad,
+            total: turnos.length,
+            items: ordenados.slice(inicio, inicio + cantidad),
+        };
     }
 }

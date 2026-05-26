@@ -66,6 +66,15 @@ export class PacienteService {
     return await this.turnoService.reservarTurnoPaciente(paciente, datosTurno);
   }
 
+  async buscarTurnosDisponibles(pacienteId, filtros) {
+    const paciente = await this.findById(pacienteId);
+
+    return await this.turnoService.buscarTurnosDisponiblesParaPaciente({
+      ...filtros,
+      paciente,
+    });
+  }
+
   async cancelarTurno(pacienteId, turnoId, motivo) {
     const paciente = await this.findById(pacienteId);
 

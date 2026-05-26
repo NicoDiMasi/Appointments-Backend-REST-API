@@ -5,8 +5,8 @@ class PacienteRepository{
     this.model = pacienteModel
   }
 
-  async findall(){
-    return await this.model.find({})
+  async findAll() {
+    return await this.model.find({});
   }
 
   async findById(id){
