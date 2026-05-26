@@ -354,22 +354,15 @@ npm test
 
 ### Lineamientos Sugeridos
 
-1. Presentacion general de Sweet Medical.
-2. Evolucion respecto de la Entrega 1.
-3. Organizacion del backend y separacion por capas.
-4. Persistencia en MongoDB.
-5. Gestion de servicios medicos.
-6. Gestion de disponibilidades.
-7. Gestion de turnos.
-8. Busqueda de turnos con filtros, costo, cobertura, paginacion y ordenamiento.
-9. Notificaciones.
-10. Tests unitarios.
-11. Documentacion Swagger.
+1. Presentación general de la solución y evolución respecto de la Entrega 1
+2. Explicación breve de la arquitectura y del modelo de persistencia
+3. Demo de gestión de servicios
+4. Demo de disponibilidades
+5. Demo de turnos, incluyendo al menos algunos casos de negocio relevantes
+6. Demo de búsqueda de turnos con filtros, cobertura, costo, paginación y ordenamiento
+7. Demo de notificaciones
+8. Presentación de los tests unitarios
+9. Presentación breve de la documentación Swagger
+
 
 ---
-
-## Cierre Sugerido
-
-Con esta segunda entrega, Sweet Medical pasa a ser una API REST mas completa y cercana a un sistema real. El backend ya no depende de datos en memoria, sino que integra persistencia con MongoDB, organiza mejor la logica por capas y cubre los flujos principales del dominio: medicos, pacientes, turnos, disponibilidad, obras sociales y notificaciones.
-
-La incorporacion de Swagger y tests unitarios tambien mejora la calidad general del proyecto, facilitando tanto la prueba de los endpoints como la validacion de las reglas de negocio.
