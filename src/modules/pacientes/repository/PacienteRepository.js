@@ -1,5 +1,5 @@
 
-import { pacienteModel } from "../schemas/pacienteSchema.js";
+import { pacienteModel } from "../schemas/PacienteSchema.js";
 import { Paciente } from "../domain/Paciente.js";
 
 class PacienteRepository{
