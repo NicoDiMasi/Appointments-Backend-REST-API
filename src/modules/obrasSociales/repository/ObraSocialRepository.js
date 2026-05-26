@@ -1,91 +1,73 @@
-import { medicoRepository } from '../../medicos/repository/MedicoRepository.js';
+import { obraSocialModel } from '../schemas/ObraSocialSchema.js';
 import { ObraSocial } from '../domain/ObraSocial.js';
-import { NivelCobertura } from '../domain/NivelCobertura.js';
+import { Plan } from '../domain/Plan.js';
+import { CoberturaEspecialidad } from '../domain/CoberturaEspecialidad.js';
+import { CoberturaPractica } from '../domain/CoberturaPractica.js';
 
 export class ObraSocialRepository {
-  constructor() {
-    if (ObraSocialRepository._instance) {
-      return ObraSocialRepository._instance;
+    constructor() {
+        this.model = obraSocialModel;
     }
 
-    ObraSocialRepository._instance = this;
-    this.obrasSociales = this._initMockData();
-  }
-
-  findAll() {
-    return this.obrasSociales;
-  }
-
-  findById(id) {
-    return this.obrasSociales.find(obraSocial => obraSocial.id === id) ?? null;
-  }
-
-  findPlanById(obraSocialId, planId) {
-    const obraSocial = this.findById(obraSocialId);
-
-    return obraSocial?.planes.find(plan => plan.id === planId) ?? null;
-  }
-
-  save(obraSocial) {
-    const index = this.obrasSociales.findIndex(os => os.id === obraSocial.id);
-
-    if (index === -1) {
-      this.obrasSociales.push(obraSocial);
-    } else {
-      this.obrasSociales[index] = obraSocial;
+    toDomain(doc) {
+        const data = doc.toObject ? doc.toObject() : doc;
+        return ObraSocial.create({
+            id: data._id,
+            nombre: data.nombre,
+            planes: (data.planes ?? []).map(p => Plan.create({
+                id: p.id,
+                nombre: p.nombre,
+                coberturasEspecialidad: (p.coberturasEspecialidad ?? []).map(c =>
+                    CoberturaEspecialidad.create({ especialidad: c.especialidad, nivel: c.nivel })
+                ),
+                coberturasPractica: (p.coberturasPractica ?? []).map(c =>
+                    CoberturaPractica.create({ practica: c.practica, nivel: c.nivel })
+                ),
+            })),
+        });
     }
 
-    return obraSocial;
-  }
+    _toDoc(obraSocial) {
+        return {
+            nombre: obraSocial.nombre,
+            planes: obraSocial.planes.map(p => ({
+                id: p.id,
+                nombre: p.nombre,
+                coberturasEspecialidad: p.coberturasEspecialidad.map(c => ({
+                    especialidad: c.especialidad,
+                    nivel: c.nivel,
+                })),
+                coberturasPractica: p.coberturasPractica.map(c => ({
+                    practica: c.practica,
+                    nivel: c.nivel,
+                })),
+            })),
+        };
+    }
 
-  _initMockData() {
-    const medico1 = medicoRepository.findById('med-001');
-    const medico2 = medicoRepository.findById('med-002');
+    async findAll() {
+        const docs = await this.model.find({});
+        return docs.map(doc => this.toDomain(doc));
+    }
 
-    const cardiologia = medico1.especialidades.find(e => e.id === 'esp-001');
-    const clinicaMedica = medico1.especialidades.find(e => e.id === 'esp-004');
-    const neurologia = medico2.especialidades.find(e => e.id === 'esp-002');
-    const electrocardiograma = medico1.practicas.find(p => p.id === 'pra-001');
+    async findById(id) {
+        const doc = await this.model.findById(id);
+        return doc ? this.toDomain(doc) : null;
+    }
 
-    return [
-      ObraSocial.create({
-        id: 'os-001',
-        nombre: 'OSDE',
-        planes: [
-          {
-            id: 'plan-210',
-            nombre: '210',
-            coberturasEspecialidad: [
-              { especialidad: cardiologia, nivel: NivelCobertura.PARCIAL },
-              { especialidad: clinicaMedica, nivel: NivelCobertura.TOTAL },
-              { especialidad: neurologia, nivel: NivelCobertura.NO_CUBIERTA },
-            ],
-            coberturasPractica: [
-              { practica: electrocardiograma, nivel: NivelCobertura.PARCIAL },
-            ],
-          },
-        ],
-      }),
-      ObraSocial.create({
-        id: 'os-002',
-        nombre: 'Swiss Medical',
-        planes: [
-          {
-            id: 'plan-smg20',
-            nombre: 'SMG20',
-            coberturasEspecialidad: [
-              { especialidad: cardiologia, nivel: NivelCobertura.TOTAL },
-              { especialidad: neurologia, nivel: NivelCobertura.PARCIAL },
-            ],
-            coberturasPractica: [
-              { practica: electrocardiograma, nivel: NivelCobertura.TOTAL },
-            ],
-          },
-        ],
-      }),
-    ];
-  }
+    async findPlanById(obraSocialId, planId) {
+        const obraSocial = await this.findById(obraSocialId);
+        return obraSocial?.planes.find(p => p.id === planId) ?? null;
+    }
+
+    async save(obraSocial) {
+        const doc = await this.model.findByIdAndUpdate(
+            obraSocial.id,
+            { $set: this._toDoc(obraSocial) },
+            { upsert: true, new: true }
+        );
+        return this.toDomain(doc);
+    }
 }
 
 export const obraSocialRepository = new ObraSocialRepository();
-
