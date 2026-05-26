@@ -21,10 +21,6 @@ app.get('/', (req, res) => {
   res.send('Bienvenido a Sweet Medical');
 });
 
-app.get('/documentacion-api.yaml', (req, res) => {
-  res.sendFile(documentacionApiPath);
-});
-
 app.use('/documentacion', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(router);

@@ -2,11 +2,13 @@
 info:
   title: Documentacion de la API de Sweet Medical
   version: 1.0.0
-  description: Documentacion de la API para gestion de medicos, pacientes, obras sociales, turnos, disponibilidad y busqueda de turnos con cobertura.
+  description: Documentacion de la API para gestion de medicos, pacientes, obras sociales, turnos, disponibilidad y busqueda de turnos con cobertura calculada desde datos persistidos en MongoDB.
 servers:
   - url: http://localhost:3000
     description: Entorno local
 tags:
+  - name: Documentacion
+    description: Especificacion y documentacion interactiva de la API
   - name: Generales
     description: Endpoints generales de la aplicacion
   - name: Health
@@ -21,6 +23,18 @@ tags:
     description: Obras sociales, planes y coberturas
 
 paths:
+  /documentacion-api.yaml:
+    get:
+      tags: [Documentacion]
+      summary: Obtener especificacion OpenAPI en formato YAML
+      responses:
+        "200":
+          description: Archivo YAML con la documentacion de la API
+          content:
+            application/yaml:
+              schema:
+                type: string
+
   /:
     get:
       tags: [Generales]
@@ -176,6 +190,7 @@ paths:
     get:
       tags: [Pacientes]
       summary: Buscar turnos disponibles para un paciente con cobertura y monto
+      description: Genera turnos disponibles a partir de medicos, turnos, paciente, obra social y plan persistidos en MongoDB. La respuesta incluye cobertura, costo base, monto a abonar, paginacion y ordenamiento.
       parameters:
         - $ref: "#/components/parameters/PacienteId"
         - $ref: "#/components/parameters/MedicoIdQuery"
@@ -247,6 +262,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Turno"
+
+  /medicos:
+    get:
+      tags: [Medicos]
+      summary: Listar medicos
+      responses:
+        "200":
+          description: Lista de medicos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medico"
+    post:
+      tags: [Medicos]
+      summary: Crear medico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicoInput"
+            example:
+              id: med-004
+              matricula: MP-4444
+              nombre: Valeria Suarez
+              especialidades:
+                - id: esp-010
+                  nombre: Dermatologia
+                  duracionTurnoEnMins: 30
+                  costoConsulta: 5500
+              practicas: []
+              disponibilidades:
+                - diaSemana: LUNES
+                  horaDesde: "09:00"
+                  horaHasta: "12:00"
+              sedes:
+                - id: sede-001
+                  nombre: Sede Central
+                  direccion: Av. Siempre Viva 123
+      responses:
+        "201":
+          description: Medico creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medico"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /medicos/{medicoId}:
+    get:
+      tags: [Medicos]
+      summary: Buscar medico por ID
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      responses:
+        "200":
+          description: Medico encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medico"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /medicos/{medicoId}/servicios:
     get:
@@ -561,6 +642,7 @@ paths:
     get:
       tags: [Turnos]
       summary: Generar turnos disponibles sin calcular cobertura de paciente
+      description: Devuelve una lista simple de turnos disponibles. Para obtener cobertura, costo base, monto a abonar, paginacion y ordenamiento, usar GET /pacientes/{id}/turnos/disponibles.
       parameters:
         - $ref: "#/components/parameters/MedicoIdQuery"
         - $ref: "#/components/parameters/EspecialidadIdQuery"
@@ -578,7 +660,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/TurnoDisponible"
+                  $ref: "#/components/schemas/Turno"
 
   /turnos/solicitudes:
     post:
@@ -896,9 +978,6 @@ components:
     Paciente:
       type: object
       properties:
-        _id:
-          type: string
-          example: pac-001
         id:
           type: string
           example: pac-001
@@ -923,12 +1002,9 @@ components:
           nullable: true
           type: string
           example: plan-210
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        activo:
+          type: boolean
+          example: true
 
     PacienteInput:
       type: object
@@ -986,6 +1062,36 @@ components:
         nombre:
           type: string
           example: Ana Gomez
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Especialidad"
+        practicas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Practica"
+        disponibilidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisponibilidadHoraria"
+        sedes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sede"
+
+    MedicoInput:
+      type: object
+      required: [id, matricula, nombre]
+      properties:
+        id:
+          type: string
+          example: med-004
+        matricula:
+          type: string
+          example: MP-4444
+        nombre:
+          type: string
+          example: Valeria Suarez
         especialidades:
           type: array
           items:
