@@ -150,6 +150,80 @@ El modulo esta montado en `/pacientes`.
 | PATCH | `/pacientes/:id/turnos/:turnoId/cancelacion` | Cancela un turno del paciente con motivo |
 | PATCH | `/pacientes/:id/turnos/:turnoId/cambio` | Cambia el turno a otro slot disponible del mismo profesional |
 
+### Notificaciones
+
+El modulo esta montado en `/notificaciones`.
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| GET | `/notificaciones/usuario/:usuarioId/no-leidas` | Lista notificaciones no leidas del usuario |
+| GET | `/notificaciones/usuario/:usuarioId/leidas` | Lista notificaciones leidas del usuario |
+| PATCH | `/notificaciones/:id/marcar-leida` | Marca una notificacion como leida |
+
+El parametro `:usuarioId` acepta tanto IDs de pacientes como de medicos.
+
+Ejemplos:
+
+```bash
+# Obtener notificaciones no leidas del medico med-001
+curl http://localhost:3000/notificaciones/usuario/med-001/no-leidas
+
+# Obtener notificaciones leidas del paciente pac-001
+curl http://localhost:3000/notificaciones/usuario/pac-001/leidas
+
+# Marcar la notificacion notif-xxx como leida
+curl -X PATCH http://localhost:3000/notificaciones/notif-xxx/marcar-leida
+```
+
+Respuesta de ejemplo (GET no-leidas):
+
+```json
+[
+  {
+    "_id": "a1b2c3d4-...",
+    "destinatario": { "id": "med-001", "nombre": "Ana Gomez", "tipo": "medico" },
+    "remitente": { "id": "pac-001", "nombre": "Juan Lopez", "tipo": "paciente" },
+    "mensaje": "El paciente Juan Lopez reservo un turno de Cardiologia.",
+    "tipo": "RESERVA_TURNO",
+    "fechaHoraCreacion": "2026-05-25T14:30:00.000Z",
+    "fechaHoraLeida": null,
+    "leida": false
+  }
+]
+```
+
+Respuesta de ejemplo (PATCH marcar-leida):
+
+```json
+{
+  "_id": "a1b2c3d4-...",
+  "destinatario": { "id": "med-001", "nombre": "Ana Gomez", "tipo": "medico" },
+  "remitente": { "id": "pac-001", "nombre": "Juan Lopez", "tipo": "paciente" },
+  "mensaje": "El paciente Juan Lopez reservo un turno de Cardiologia.",
+  "tipo": "RESERVA_TURNO",
+  "fechaHoraCreacion": "2026-05-25T14:30:00.000Z",
+  "fechaHoraLeida": "2026-05-25T15:00:00.000Z",
+  "leida": true
+}
+```
+
+#### Tipos de notificacion
+
+| Tipo | Evento que la dispara | Destinatario |
+| --- | --- | --- |
+| `RESERVA_TURNO` | Paciente reserva un turno | Medico |
+| `TURNO_ACEPTADO` | Medico acepta un turno | Paciente |
+| `CANCELACION_PACIENTE` | Paciente cancela un turno | Medico |
+| `CANCELACION_MEDICO` | Medico cancela un turno | Paciente |
+| `MODIFICACION_TURNO` | Medico modifica un turno | Paciente |
+| `RECORDATORIO` | Dia previo al turno (automatico, cada 24h) | Paciente y Medico |
+
+#### Envio asincrono
+
+El envio de notificaciones es siempre **fire-and-forget**: no bloquea el flujo principal del turno ni causa que la operacion falle si la notificacion no se puede guardar. Los errores de notificacion se loguean en consola pero no se propagan al cliente.
+
+---
+
 ## Reglas de negocio implementadas
 
 - Los turnos se organizan en modulos de 20 minutos.

@@ -1,0 +1,319 @@
+{
+  "info": {
+    "name": "Sweet Medical — Notificaciones",
+    "description": "Flujo completo para testear el módulo de notificaciones: endpoints directos (GET/PATCH) y endpoints que las generan de forma indirecta (reserva, cancelación y modificación de turnos).\n\nEjecutar en orden 1→13 con el Collection Runner para que los scripts automáticos propaguen los IDs entre requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "URL base del servidor Express"
+    },
+    {
+      "key": "pacienteId",
+      "value": "",
+      "type": "string",
+      "description": "Se setea automáticamente al crear el paciente (request #1)"
+    },
+    {
+      "key": "turnoId",
+      "value": "",
+      "type": "string",
+      "description": "Se setea automáticamente al reservar cada turno (requests #2 y #6)"
+    },
+    {
+      "key": "notificacionId",
+      "value": "",
+      "type": "string",
+      "description": "Se setea automáticamente desde las no-leídas del médico (request #8)"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 — Setup: Crear Paciente",
+      "item": [
+        {
+          "name": "1. Crear paciente de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const id = body._id ?? body.id;",
+                  "pm.collectionVariables.set('pacienteId', id);",
+                  "console.log('pacienteId seteado:', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"pac-test-001\",\n  \"nombre\": \"María García\",\n  \"dni\": \"30999888\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pacientes",
+              "host": ["{{baseUrl}}"],
+              "path": ["pacientes"]
+            },
+            "description": "Crea el paciente de prueba. El id es provisto por el cliente (no lo genera el servidor).\nEl script guarda el id en la variable de colección `pacienteId`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 — Endpoints que generan notificaciones",
+      "item": [
+        {
+          "name": "2. Reservar turno → RESERVA_TURNO al médico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('turnoId', body.id);",
+                  "console.log('turnoId seteado:', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"tur-test-001\",\n  \"medicoId\": \"med-001\",\n  \"especialidadId\": \"esp-001\",\n  \"fechaHora\": \"2026-06-01 10:00\",\n  \"sede\": { \"id\": \"sede-001\", \"nombre\": \"Sede Central\" }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pacientes/{{pacienteId}}/turnos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pacientes", "{{pacienteId}}", "turnos"]
+            },
+            "description": "Reserva un turno con Ana Gómez (med-001) para el lunes 01/06/2026 a las 09:00.\nGenera una notificación de tipo RESERVA_TURNO al médico med-001.\nEl id del turno se guarda en `turnoId`.\n\nNota: la fecha debe ser un lunes futuro dentro del horario de med-001 (LUNES 08:00–12:00). Actualizar si ya pasó."
+          }
+        },
+        {
+          "name": "3. Consultar turnos del paciente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pacientes/{{pacienteId}}/turnos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pacientes", "{{pacienteId}}", "turnos"]
+            },
+            "description": "Lista todos los turnos del paciente. Útil para confirmar que el turno reservado existe y obtener su id si es necesario."
+          }
+        },
+        {
+          "name": "4. Médico modifica turno → MODIFICACION_TURNO al paciente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"costo\": 5500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/medicos/med-001/turnos/{{turnoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["medicos", "med-001", "turnos", "{{turnoId}}"]
+            },
+            "description": "El médico modifica el costo del turno.\nGenera una notificación de tipo MODIFICACION_TURNO al paciente."
+          }
+        },
+        {
+          "name": "5. Médico cancela turno → CANCELACION_MEDICO al paciente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CANCELADO\",\n  \"motivo\": \"El médico no puede asistir\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/medicos/med-001/turnos/{{turnoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["medicos", "med-001", "turnos", "{{turnoId}}"]
+            },
+            "description": "El médico cancela el turno enviando estado=CANCELADO.\nGenera una notificación de tipo CANCELACION_MEDICO al paciente."
+          }
+        },
+        {
+          "name": "6. Paciente reserva 2do turno → RESERVA_TURNO al médico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('turnoId', body.id);",
+                  "console.log('turnoId (2do turno) seteado:', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"tur-test-002\",\n  \"medicoId\": \"med-001\",\n  \"especialidadId\": \"esp-001\",\n  \"fechaHora\": \"2026-06-08 10:00\",\n  \"sede\": { \"id\": \"sede-001\", \"nombre\": \"Sede Central\" }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pacientes/{{pacienteId}}/turnos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pacientes", "{{pacienteId}}", "turnos"]
+            },
+            "description": "Reserva un segundo turno (lunes 08/06/2026) para poder cancelarlo desde el lado del paciente.\nGenera RESERVA_TURNO al médico. Actualiza `turnoId`."
+          }
+        },
+        {
+          "name": "7. Paciente cancela turno → CANCELACION_PACIENTE al médico",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"No puedo asistir ese día\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pacientes/{{pacienteId}}/turnos/{{turnoId}}/cancelacion",
+              "host": ["{{baseUrl}}"],
+              "path": ["pacientes", "{{pacienteId}}", "turnos", "{{turnoId}}", "cancelacion"]
+            },
+            "description": "El paciente cancela su turno. El turno debe ser con más de 1 hora de anticipación.\nGenera una notificación de tipo CANCELACION_PACIENTE al médico med-001."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 — Endpoints directos de notificaciones",
+      "item": [
+        {
+          "name": "8. No leídas del médico (med-001)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const notifs = pm.response.json();",
+                  "if (Array.isArray(notifs) && notifs.length > 0) {",
+                  "  const id = notifs[0]._id ?? notifs[0].id;",
+                  "  pm.collectionVariables.set('notificacionId', id);",
+                  "  console.log('notificacionId seteado:', id);",
+                  "} else {",
+                  "  console.warn('No hay notificaciones no leídas para med-001. Ejecutar primero los requests del bloque 2.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/usuario/med-001/no-leidas",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "usuario", "med-001", "no-leidas"]
+            },
+            "description": "Devuelve las notificaciones no leídas del médico med-001.\nEsperar: notificaciones tipo RESERVA_TURNO y CANCELACION_PACIENTE.\nEl script guarda el id de la primera notificación en `notificacionId`."
+          }
+        },
+        {
+          "name": "9. Leídas del médico (med-001)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/usuario/med-001/leidas",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "usuario", "med-001", "leidas"]
+            },
+            "description": "Devuelve las notificaciones ya leídas del médico med-001.\nEsperar: lista vacía antes de marcar alguna como leída (request #12)."
+          }
+        },
+        {
+          "name": "10. No leídas del paciente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/usuario/{{pacienteId}}/no-leidas",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "usuario", "{{pacienteId}}", "no-leidas"]
+            },
+            "description": "Devuelve las notificaciones no leídas del paciente.\nEsperar: notificaciones tipo CANCELACION_MEDICO y MODIFICACION_TURNO."
+          }
+        },
+        {
+          "name": "11. Leídas del paciente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/usuario/{{pacienteId}}/leidas",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "usuario", "{{pacienteId}}", "leidas"]
+            },
+            "description": "Devuelve las notificaciones ya leídas del paciente.\nEsperar: lista vacía antes de marcar alguna como leída."
+          }
+        },
+        {
+          "name": "12. Marcar notificación como leída",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/{{notificacionId}}/marcar-leida",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "{{notificacionId}}", "marcar-leida"]
+            },
+            "description": "Marca la notificación seteada en `notificacionId` como leída.\nEsperar: objeto notificación con leida=true y fechaHoraLeida seteada.\nVerificar luego con el request #9 que aparece en las leídas del médico."
+          }
+        },
+        {
+          "name": "13. Marcar notificación inexistente → 404",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/notif-inexistente/marcar-leida",
+              "host": ["{{baseUrl}}"],
+              "path": ["notificaciones", "notif-inexistente", "marcar-leida"]
+            },
+            "description": "Intenta marcar como leída una notificación que no existe.\nEsperar: HTTP 404 con mensaje de error."
+          }
+        }
+      ]
+    }
+  ]
+}

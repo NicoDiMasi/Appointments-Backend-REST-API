@@ -4,6 +4,8 @@ import { Especialidad } from '../domain/Especialidad.js';
 import { Practica } from '../domain/Practica.js';
 import { TurnoService } from '../../turnos/service/TurnoService.js';
 import { turnoRepository } from '../../turnos/repository/TurnoRepository.js';
+import { notificacionService } from '../../notificaciones/service/NotificacionService.js';
+import { TipoNotificacion } from '../../notificaciones/domain/TipoNotificacion.js';
 import {
   MedicoNotFoundError,
   DisponibilidadNotFoundError,
@@ -166,12 +168,37 @@ export const MedicoService = {
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     if (cambios.estado === 'CANCELADO') {
-      return turnoService.cancelarTurnoMedico(medico, turnoId, cambios.motivo);
+      const turno = turnoService.cancelarTurnoMedico(medico, turnoId, cambios.motivo);
+
+      if (turno.paciente?.id) {
+        notificacionService.crearNotificacion({
+          destinatarioId: turno.paciente.id,
+          destinatarioTipo: 'paciente',
+          remitenteId: medico.id,
+          remitenteTipo: 'medico',
+          mensaje: `El medico ${medico.nombre} cancelo tu turno. Motivo: ${cambios.motivo ?? 'Sin motivo'}`,
+          tipo: TipoNotificacion.CANCELACION_MEDICO,
+        }).catch(err => console.error('Error al crear notificacion CANCELACION_MEDICO:', err));
+      }
+
+      return turno;
     }
 
     turnoService.obtenerTurnoDelMedico(turnoId, medicoId);
+    const turnoActualizado = turnoService.actualizarTurno(turnoId, cambios);
 
-    return turnoService.actualizarTurno(turnoId, cambios);
+    if (turnoActualizado.paciente?.id) {
+      notificacionService.crearNotificacion({
+        destinatarioId: turnoActualizado.paciente.id,
+        destinatarioTipo: 'paciente',
+        remitenteId: medico.id,
+        remitenteTipo: 'medico',
+        mensaje: `El medico ${medico.nombre} modifico tu turno. Por favor, revisa los cambios para aceptarlos o rechazarlos.`,
+        tipo: TipoNotificacion.MODIFICACION_TURNO,
+      }).catch(err => console.error('Error al crear notificacion MODIFICACION_TURNO:', err));
+    }
+
+    return turnoActualizado;
   },
 
   consultarDisponibilidadTurno(medicoId, filtros) {

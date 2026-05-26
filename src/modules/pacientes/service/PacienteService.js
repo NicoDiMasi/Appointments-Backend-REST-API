@@ -2,6 +2,8 @@ import { Paciente } from '../domain/Paciente.js';
 import { pacienteRepository } from '../repository/PacienteRepository.js';
 import { TurnoService } from '../../turnos/service/TurnoService.js';
 import { turnoRepository } from '../../turnos/repository/TurnoRepository.js';
+import { notificacionService } from '../../notificaciones/service/NotificacionService.js';
+import { TipoNotificacion } from '../../notificaciones/domain/TipoNotificacion.js';
 import {
   PacienteInvalidoError,
   PacienteNotFoundError,
@@ -62,14 +64,34 @@ export class PacienteService {
 
   async reservarTurno(pacienteId, datosTurno) {
     const paciente = await this.findById(pacienteId);
+    const turno = await this.turnoService.reservarTurnoPaciente(paciente, datosTurno);
 
-    return await this.turnoService.reservarTurnoPaciente(paciente, datosTurno);
+    notificacionService.crearNotificacion({
+      destinatarioId: turno.medico.id,
+      destinatarioTipo: 'medico',
+      remitenteId: paciente.id,
+      remitenteTipo: 'paciente',
+      mensaje: `El paciente ${paciente.nombre} reservo un turno de ${turno.especialidad?.nombre ?? turno.practica?.nombre ?? 'servicio'}.`,
+      tipo: TipoNotificacion.RESERVA_TURNO,
+    }).catch(err => console.error('Error al crear notificacion RESERVA_TURNO:', err));
+
+    return turno;
   }
 
   async cancelarTurno(pacienteId, turnoId, motivo) {
     const paciente = await this.findById(pacienteId);
+    const turno = await this.turnoService.cancelarTurnoPaciente(paciente, turnoId, motivo);
 
-    return await this.turnoService.cancelarTurnoPaciente(paciente, turnoId, motivo);
+    notificacionService.crearNotificacion({
+      destinatarioId: turno.medico.id,
+      destinatarioTipo: 'medico',
+      remitenteId: paciente.id,
+      remitenteTipo: 'paciente',
+      mensaje: `El paciente ${paciente.nombre} cancelo el turno. Motivo: ${motivo}`,
+      tipo: TipoNotificacion.CANCELACION_PACIENTE,
+    }).catch(err => console.error('Error al crear notificacion CANCELACION_PACIENTE:', err));
+
+    return turno;
   }
 
   async consultarHistorialTurnos(pacienteId) {

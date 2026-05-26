@@ -1,5 +1,5 @@
 
-import { pacienteModel } from "../schemas/PacienteSchema.js";
+import { pacienteModel } from "../schemas/pacienteSchema.js";
 class PacienteRepository{
   constructor(){
     this.model = pacienteModel
