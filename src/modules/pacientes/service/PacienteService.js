@@ -57,7 +57,7 @@ export class PacienteService {
 
   async eliminarPaciente(pacienteId) {
     await this.findById(pacienteId);
-    await this.repository.deleteById(pacienteId);
+    await this.repository.softDelete(pacienteId);
   }
 
   async reservarTurno(pacienteId, datosTurno) {

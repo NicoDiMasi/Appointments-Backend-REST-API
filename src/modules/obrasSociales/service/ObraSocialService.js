@@ -5,12 +5,12 @@ import {
 } from '../errors/ObraSocialErrors.js';
 
 export const ObraSocialService = {
-  listar() {
+  async listar() {
     return obraSocialRepository.findAll();
   },
 
-  buscarPorId(obraSocialId) {
-    const obraSocial = obraSocialRepository.findById(obraSocialId);
+  async buscarPorId(obraSocialId) {
+    const obraSocial = await obraSocialRepository.findById(obraSocialId);
 
     if (!obraSocial) {
       throw new ObraSocialNotFoundError(obraSocialId);
@@ -19,14 +19,14 @@ export const ObraSocialService = {
     return obraSocial;
   },
 
-  listarPlanes(obraSocialId) {
-    return this.buscarPorId(obraSocialId).planes;
+  async listarPlanes(obraSocialId) {
+    return (await this.buscarPorId(obraSocialId)).planes;
   },
 
-  buscarPlan(obraSocialId, planId) {
-    this.buscarPorId(obraSocialId);
+  async buscarPlan(obraSocialId, planId) {
+    await this.buscarPorId(obraSocialId);
 
-    const plan = obraSocialRepository.findPlanById(obraSocialId, planId);
+    const plan = await obraSocialRepository.findPlanById(obraSocialId, planId);
 
     if (!plan) {
       throw new PlanNotFoundError(planId);
@@ -35,4 +35,3 @@ export const ObraSocialService = {
     return plan;
   },
 };
-

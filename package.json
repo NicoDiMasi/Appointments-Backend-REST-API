@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "seed:mongo": "node scripts/seedMongo.js"
   },
   "keywords": [],
   "author": "",

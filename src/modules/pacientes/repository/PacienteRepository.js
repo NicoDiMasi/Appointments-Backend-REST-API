@@ -1,16 +1,31 @@
 
-import { pacienteModel } from "../schemas/PacienteSchema.js";
+import { pacienteModel } from "../schemas/pacienteSchema.js";
+import { Paciente } from "../domain/Paciente.js";
+
 class PacienteRepository{
   constructor(){
     this.model = pacienteModel
   }
 
-  async findAll() {
-    return await this.model.find({});
+  toDomain(pacienteFromMongo) {
+    return Paciente.create({
+      id: pacienteFromMongo._id,
+      dni: pacienteFromMongo.dni,
+      nombre: pacienteFromMongo.nombre,
+      usuario: pacienteFromMongo.usuario,
+      obraSocial: pacienteFromMongo.obraSocial,
+      plan: pacienteFromMongo.plan,
+    });
+  }
+
+  async findAll(){
+    const docs = await this.model.find({activo:true})
+    return docs.map(doc => this.toDomain(doc))
   }
 
   async findById(id){
-    return await this.model.findById(id)
+    const doc = await this.model.findById(id)
+    return doc ? this.toDomain(doc) : null
   }
 
 
@@ -19,17 +34,21 @@ class PacienteRepository{
     // asi mantenemos nuestros propios ID y no el objeto raro que te devuelve mongo
     const nuevoPaciente = new this.model({ _id: paciente.id, ...paciente });
     const pacienteCreado = await nuevoPaciente.save()
-    return pacienteCreado
+    return this.toDomain(pacienteCreado)
   }
 
 
 
-  async deleteById(pacienteId) {
-    return await this.model.findByIdAndDelete(pacienteId)
+  // async deleteById(pacienteId) {
+  //   return await this.model.findByIdAndDelete(pacienteId)
+  // }
+
+   async softDelete(pacienteId) {
+    return this.toDomain(await this.model.findByIdAndUpdate(pacienteId, {activo:false}, {new:true}))
   }
 
   async updateById(pacienteId, datosActualizados){
-    return await this.model.findByIdAndUpdate(pacienteId, datosActualizados, {new:true})
+    return this.toDomain(await this.model.findByIdAndUpdate(pacienteId, datosActualizados, {new:true}))
   }
 }
 
