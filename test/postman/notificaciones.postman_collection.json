@@ -241,9 +241,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/usuario/med-001/no-leidas",
+              "raw": "{{baseUrl}}/notificaciones/usuarios/med-001?leida=false",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "usuario", "med-001", "no-leidas"]
+              "path": ["notificaciones", "usuarios", "med-001"],
+              "query": [{ "key": "leida", "value": "false" }]
             },
             "description": "Devuelve las notificaciones no leídas del médico med-001.\nEsperar: notificaciones tipo RESERVA_TURNO y CANCELACION_PACIENTE.\nEl script guarda el id de la primera notificación en `notificacionId`."
           }
@@ -254,9 +255,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/usuario/med-001/leidas",
+              "raw": "{{baseUrl}}/notificaciones/usuarios/med-001?leida=true",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "usuario", "med-001", "leidas"]
+              "path": ["notificaciones", "usuarios", "med-001"],
+              "query": [{ "key": "leida", "value": "true" }]
             },
             "description": "Devuelve las notificaciones ya leídas del médico med-001.\nEsperar: lista vacía antes de marcar alguna como leída (request #12)."
           }
@@ -267,9 +269,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/usuario/{{pacienteId}}/no-leidas",
+              "raw": "{{baseUrl}}/notificaciones/usuarios/{{pacienteId}}?leida=false",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "usuario", "{{pacienteId}}", "no-leidas"]
+              "path": ["notificaciones", "usuarios", "{{pacienteId}}"],
+              "query": [{ "key": "leida", "value": "false" }]
             },
             "description": "Devuelve las notificaciones no leídas del paciente.\nEsperar: notificaciones tipo CANCELACION_MEDICO y MODIFICACION_TURNO."
           }
@@ -280,9 +283,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/usuario/{{pacienteId}}/leidas",
+              "raw": "{{baseUrl}}/notificaciones/usuarios/{{pacienteId}}?leida=true",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "usuario", "{{pacienteId}}", "leidas"]
+              "path": ["notificaciones", "usuarios", "{{pacienteId}}"],
+              "query": [{ "key": "leida", "value": "true" }]
             },
             "description": "Devuelve las notificaciones ya leídas del paciente.\nEsperar: lista vacía antes de marcar alguna como leída."
           }
@@ -293,9 +297,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/{{notificacionId}}/marcar-leida",
+              "raw": "{{baseUrl}}/notificaciones/{{notificacionId}}/leida",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "{{notificacionId}}", "marcar-leida"]
+              "path": ["notificaciones", "{{notificacionId}}", "leida"]
             },
             "description": "Marca la notificación seteada en `notificacionId` como leída.\nEsperar: objeto notificación con leida=true y fechaHoraLeida seteada.\nVerificar luego con el request #9 que aparece en las leídas del médico."
           }
@@ -306,9 +310,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/notificaciones/notif-inexistente/marcar-leida",
+              "raw": "{{baseUrl}}/notificaciones/notif-inexistente/leida",
               "host": ["{{baseUrl}}"],
-              "path": ["notificaciones", "notif-inexistente", "marcar-leida"]
+              "path": ["notificaciones", "notif-inexistente", "leida"]
             },
             "description": "Intenta marcar como leída una notificación que no existe.\nEsperar: HTTP 404 con mensaje de error."
           }

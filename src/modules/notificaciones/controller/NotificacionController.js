@@ -1,18 +1,12 @@
 import { notificacionService } from '../service/NotificacionService.js';
 
 export const NotificacionController = {
-  async getNoLeidas(req, res, next) {
+  async getByUsuario(req, res, next) {
     try {
-      const notificaciones = await notificacionService.getNoLeidas(req.params.usuarioId);
-      return res.status(200).json(notificaciones);
-    } catch (error) {
-      return next(error);
-    }
-  },
-
-  async getLeidas(req, res, next) {
-    try {
-      const notificaciones = await notificacionService.getLeidas(req.params.usuarioId);
+      const leida = req.query.leida === 'true';
+      const notificaciones = leida
+        ? await notificacionService.getLeidas(req.params.usuarioId)
+        : await notificacionService.getNoLeidas(req.params.usuarioId);
       return res.status(200).json(notificaciones);
     } catch (error) {
       return next(error);
