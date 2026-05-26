@@ -10,13 +10,26 @@ Esta carpeta tiene ejemplos para probar la API con Postman, Insomnia o `curl`.
 npm install
 ```
 
-2. Levantar el servidor:
+2. Configurar `.env`:
 
-```bash
-npm.cmd run dev
+```env
+MONGO_URI=mongodb://localhost:27017/sweet-medical
+PORT=3000
 ```
 
-3. Usar esta URL base:
+3. Cargar datos base:
+
+```bash
+npm run seed:mongo
+```
+
+4. Levantar el servidor:
+
+```bash
+npm run dev
+```
+
+5. Usar esta URL base:
 
 ```text
 http://localhost:3000
@@ -28,17 +41,18 @@ En Postman o Insomnia conviene crear una variable:
 baseUrl = http://localhost:3000
 ```
 
-Los datos son en memoria. Si reinicias el servidor, vuelven los mocks iniciales.
+La API persiste datos en MongoDB. Si queres volver al estado base de medicos, pacientes y obras sociales, ejecuta nuevamente `npm run seed:mongo`. Los turnos pueden generarse o reservarse luego mediante los endpoints de la API para realizar las pruebas funcionales.
 
 ## Orden sugerido
 
-1. [Generales](./generales.md): probar `/` y `/health`.
+1. [Generales](./generales.md): probar `/`, `/health` y `/documentacion`.
 2. [Obras sociales](./obras-sociales.md): consultar obras sociales, planes y coberturas.
-3. [Medicos](./medicos.md): servicios, disponibilidades y acciones del medico.
-4. [Turnos](./turnos.md): busqueda de disponibilidad, creacion, solicitud, actualizacion y baja.
-5. [Pacientes](./pacientes.md): CRUD de pacientes, reserva, cancelacion, historial y cambio.
+3. [Medicos](./medicos.md): listado, alta, servicios, disponibilidades y acciones del medico.
+4. [Turnos](./turnos.md): disponibilidad, creacion, solicitud, actualizacion y baja.
+5. [Pacientes](./pacientes.md): CRUD de pacientes, busqueda con cobertura, reserva, cancelacion, historial y cambio.
+6. [Notificaciones](./notificaciones.md): consulta de notificaciones y marcado como leida.
 
-## Datos utiles
+## Datos utiles del seed
 
 Medicos:
 
@@ -91,3 +105,10 @@ CANCELADO
 REALIZADO
 ```
 
+Niveles de cobertura:
+
+```text
+TOTAL
+PARCIAL
+NO_CUBIERTA
+```

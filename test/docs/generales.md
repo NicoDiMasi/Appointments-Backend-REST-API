@@ -28,3 +28,10 @@ Respuesta esperada parcial:
 }
 ```
 
+## GET /documentacion
+
+Abre la documentacion interactiva de Swagger UI.
+
+```http
+GET {{baseUrl}}/documentacion
+```

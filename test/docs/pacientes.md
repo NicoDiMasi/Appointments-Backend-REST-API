@@ -78,6 +78,50 @@ Status esperado:
 
 ## Turnos de pacientes
 
+### GET /pacientes/:id/turnos/disponibles
+
+Busca slots disponibles para un paciente. A diferencia de `/turnos/disponibles`, devuelve resultados paginados e incluye cobertura, costo base y monto a abonar segun la obra social y plan del paciente.
+
+```http
+GET {{baseUrl}}/pacientes/pac-001/turnos/disponibles?especialidadId=esp-001&sedeId=sede-001&page=1&limit=5&sortBy=fecha&sortOrder=asc
+```
+
+Filtros soportados:
+
+```text
+medicoId
+especialidadId
+practicaId
+tipoPrestacion
+sedeId
+fechaDesde
+fechaHasta
+duracionTurnoEnMins
+page
+limit
+sortBy=fecha|costo
+sortOrder=asc|desc
+```
+
+Respuesta esperada parcial:
+
+```json
+{
+  "page": 1,
+  "limit": 5,
+  "total": 3,
+  "totalPages": 1,
+  "items": [
+    {
+      "medico": { "id": "med-001" },
+      "cobertura": "PARCIAL",
+      "costoBase": 5000,
+      "montoAbonar": 2500
+    }
+  ]
+}
+```
+
 ### POST /pacientes/:id/turnos
 
 Reserva un turno para un paciente, validando disponibilidad.
@@ -155,10 +199,9 @@ Body:
 1. Buscar slots:
 
 ```http
-GET {{baseUrl}}/turnos/disponibles?medicoId=med-001&especialidadId=esp-001&sedeId=sede-001
+GET {{baseUrl}}/pacientes/pac-001/turnos/disponibles?medicoId=med-001&especialidadId=esp-001&sedeId=sede-001
 ```
 
 2. Reservar con `POST /pacientes/pac-001/turnos`.
 3. Consultar historial con `GET /pacientes/pac-001/turnos`.
 4. Cambiar o cancelar el turno reservado.
-

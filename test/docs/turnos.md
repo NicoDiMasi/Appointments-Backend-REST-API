@@ -49,7 +49,7 @@ Respuesta esperada parcial:
 
 ## GET /turnos/disponibles
 
-Busca slots disponibles para pacientes.
+Busca slots disponibles de forma general. Devuelve una lista simple de turnos generados. Para ver cobertura, costo base, monto a abonar, ordenamiento y paginacion por paciente, usar `GET /pacientes/:id/turnos/disponibles`.
 
 Filtros soportados:
 
@@ -241,4 +241,3 @@ Status esperado:
 ```text
 204 No Content
 ```
-

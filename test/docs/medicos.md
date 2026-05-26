@@ -2,6 +2,47 @@
 
 Usar `{{baseUrl}}` como `http://localhost:3000`.
 
+## CRUD basico
+
+### GET /medicos
+
+Lista los medicos cargados.
+
+```http
+GET {{baseUrl}}/medicos
+```
+
+### GET /medicos/:medicoId
+
+Busca un medico por ID.
+
+```http
+GET {{baseUrl}}/medicos/med-001
+```
+
+### POST /medicos
+
+Crea un medico.
+
+```http
+POST {{baseUrl}}/medicos
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "id": "med-test-001",
+  "matricula": "MP-TEST",
+  "nombre": "Medico Test",
+  "especialidades": [],
+  "practicas": [],
+  "sedes": [],
+  "disponibilidades": []
+}
+```
+
 ## Servicios
 
 ### GET /medicos/:medicoId/servicios
@@ -179,4 +220,3 @@ Body:
   "motivo": "El medico no puede atender"
 }
 ```
-

@@ -21,17 +21,19 @@ tags:
     description: Gestion y consulta de turnos
   - name: Obras Sociales
     description: Obras sociales, planes y coberturas
+  - name: Notificaciones
+    description: Consulta y marcado de notificaciones internas
 
 paths:
-  /documentacion-api.yaml:
+  /documentacion:
     get:
       tags: [Documentacion]
-      summary: Obtener especificacion OpenAPI en formato YAML
+      summary: Abrir documentacion interactiva
       responses:
         "200":
-          description: Archivo YAML con la documentacion de la API
+          description: Swagger UI con la documentacion de la API
           content:
-            application/yaml:
+            text/html:
               schema:
                 type: string
 
@@ -129,7 +131,7 @@ paths:
               $ref: "#/components/schemas/PacienteUpdate"
             example:
               nombre: Juan Lopez Actualizado
-              plan: plan-310
+              plan: plan-smg20
       responses:
         "200":
           description: Paciente actualizado
@@ -748,6 +750,46 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /notificaciones/usuarios/{usuarioId}:
+    get:
+      tags: [Notificaciones]
+      summary: Listar notificaciones de un usuario
+      description: Sin query devuelve notificaciones no leidas. Con `leida=true` devuelve notificaciones leidas.
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+        - name: leida
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        "200":
+          description: Notificaciones del usuario filtradas por estado de lectura
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notificacion"
+
+  /notificaciones/{id}/leida:
+    patch:
+      tags: [Notificaciones]
+      summary: Marcar una notificacion como leida
+      parameters:
+        - $ref: "#/components/parameters/NotificacionId"
+      responses:
+        "200":
+          description: Notificacion marcada como leida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notificacion"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   parameters:
     PacienteId:
@@ -799,6 +841,20 @@ components:
       schema:
         type: string
       example: tur-001
+    UsuarioId:
+      name: usuarioId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: med-001
+    NotificacionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: notif-001
     ObraSocialId:
       name: obraSocialId
       in: path
@@ -1238,6 +1294,55 @@ components:
       enum: [DISPONIBLE, RESERVADO, CONFIRMADO, CANCELADO, REALIZADO]
       example: RESERVADO
 
+    TipoNotificacion:
+      type: string
+      enum:
+        - RESERVA_TURNO
+        - TURNO_ACEPTADO
+        - CANCELACION_PACIENTE
+        - CANCELACION_MEDICO
+        - MODIFICACION_TURNO
+        - RECORDATORIO
+      example: RESERVA_TURNO
+
+    Notificacion:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: notif-001
+        destinatarioId:
+          type: string
+          example: med-001
+        destinatarioTipo:
+          type: string
+          enum: [paciente, medico]
+          example: medico
+        remitenteId:
+          type: string
+          example: pac-001
+        remitenteTipo:
+          type: string
+          enum: [paciente, medico, sistema]
+          example: paciente
+        mensaje:
+          type: string
+          example: El paciente Juan Lopez reservo un turno de Cardiologia.
+        tipo:
+          $ref: "#/components/schemas/TipoNotificacion"
+        fechaHoraCreacion:
+          type: string
+          format: date-time
+          example: "2026-05-26T12:00:00.000Z"
+        fechaHoraLeida:
+          nullable: true
+          type: string
+          format: date-time
+          example: null
+        leida:
+          type: boolean
+          example: false
+
     Usuario:
       type: object
       properties:
@@ -1522,5 +1627,3 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Plan"
-
-
