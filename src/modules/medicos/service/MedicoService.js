@@ -185,7 +185,7 @@ export const MedicoService = {
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     if (cambios.estado === 'CANCELADO') {
-      const turno = turnoService.cancelarTurnoMedico(medico, turnoId, cambios.motivo);
+      const turno = await turnoService.cancelarTurnoMedico(medico, turnoId, cambios.motivo);
 
       if (turno.paciente?.id) {
         notificacionService.crearNotificacion({
@@ -202,7 +202,7 @@ export const MedicoService = {
     }
 
     turnoService.obtenerTurnoDelMedico(turnoId, medicoId);
-    const turnoActualizado = turnoService.actualizarTurno(turnoId, cambios);
+    const turnoActualizado = await turnoService.actualizarTurno(turnoId, cambios);
 
     if (turnoActualizado.paciente?.id) {
       notificacionService.crearNotificacion({
