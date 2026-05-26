@@ -1,4 +1,5 @@
 import { medicoRepository } from '../repository/MedicoRepository.js';
+import { Medico } from '../domain/Medico.js';
 import { DisponibilidadHoraria } from '../domain/DisponibilidadHoraria.js';
 import { Especialidad } from '../domain/Especialidad.js';
 import { Practica } from '../domain/Practica.js';
@@ -38,7 +39,22 @@ function obtenerColeccionServicios(medico, tipo) {
 }
 //SERVICIO: Especialidad o Práctica
 export const MedicoService = {
-  
+
+  async findAll() {
+    return medicoRepository.findAll();
+  },
+
+  async findById(medicoId) {
+    const medico = await medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+    return medico;
+  },
+
+  async crearMedico(datos) {
+    const medico = Medico.create(datos);
+    return await medicoRepository.save(medico);
+  },
+
   async listarServicios(medicoId) {
     const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);

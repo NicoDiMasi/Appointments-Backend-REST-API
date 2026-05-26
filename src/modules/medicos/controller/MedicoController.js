@@ -2,6 +2,33 @@ import { MedicoService } from '../service/MedicoService.js';
 
 
 export const MedicoController = {
+    async findAll(req, res, next) {
+        try {
+            const medicos = await MedicoService.findAll();
+            res.status(200).json(medicos);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async findById(req, res, next) {
+        try {
+            const medico = await MedicoService.findById(req.params.medicoId);
+            res.status(200).json(medico);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async create(req, res, next) {
+        try {
+            const medico = await MedicoService.crearMedico(req.body);
+            res.status(201).json(medico);
+        } catch (error) {
+            next(error);
+        }
+    },
+
     async listarServicios(req, res, next) {
         try {
             const { medicoId } = req.params;
