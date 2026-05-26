@@ -20,7 +20,9 @@ const turnoSchema = new mongoose.Schema({
     practica: { type: Object, default: null },
     estado: { type: String, required: true, enum: Object.values(EstadoTurno) },
     historialEstados: { type: [cambioEstadoSchema], default: [] },
-    costo: { type: Number, required: true }
+    costo: { type: Number, required: true },
+    duracionTurno: { type: Number, required: true },
+    modulosRequeridos: { type: Number, required: true },
 }, {
     timestamps: true,
     versionKey: false,

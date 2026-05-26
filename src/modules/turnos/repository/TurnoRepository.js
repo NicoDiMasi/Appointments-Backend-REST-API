@@ -9,7 +9,8 @@ export class TurnoRepository {
 
     toDomain(doc) {
         const data = doc.toObject ? doc.toObject() : doc;
-        return new Turno({
+
+        return Turno.create({
             id: data._id,
             medico: data.medico,
             paciente: data.paciente,
@@ -26,6 +27,8 @@ export class TurnoRepository {
                 motivo: h.motivo,
             })),
             costo: data.costo,
+            duracionTurno: data.duracionTurno,
+            modulosRequeridos: data.modulosRequeridos,
         });
     }
 
@@ -46,6 +49,8 @@ export class TurnoRepository {
                 motivo: h.motivo,
             })),
             costo: turno.costo,
+            duracionTurno: turno.duracionTurno,
+            modulosRequeridos: turno.modulosRequeridos,
         };
     }
 

@@ -3,7 +3,9 @@ import { Agenda } from '../domain/Agenda.js';
 import { EstadoTurno } from '../domain/EstadoTurno.js';
 import { TurnoRepository } from '../repository/TurnoRepository.js';
 import { medicoRepository } from '../../medicos/repository/MedicoRepository.js';
+import { ObraSocialService } from '../../obrasSociales/service/ObraSocialService.js';
 import { MedicoNotFoundError } from '../../medicos/errors/MedicoErrors.js';
+import { NivelCobertura } from '../../obrasSociales/domain/NivelCobertura.js';
 import {
     calcularCantidadModulos,
     calcularDuracionModular,
@@ -28,9 +30,14 @@ function faltaMasDeUnaHora(fechaHoraTurno) {
 
 export class TurnoService {
 
-    constructor(turnoRepository, medicosRepository = medicoRepository) {
+    constructor(
+        turnoRepository,
+        medicosRepository = medicoRepository,
+        obraSocialService = ObraSocialService
+    ) {
         this.turnoRepository = turnoRepository;
         this.medicoRepository = medicosRepository;
+        this.obraSocialService = obraSocialService;
         this.agenda = new Agenda();
     }
 
@@ -187,12 +194,43 @@ export class TurnoService {
     }
 
     async generarTurnosDisponibles({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
-        return this.buscarTurnosDisponiblesParaPaciente({
+        return this.generarTurnosDisponiblesFiltrados({
             medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta,
         });
     }
 
-    async buscarTurnosDisponiblesParaPaciente({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
+    async buscarTurnosDisponiblesParaPaciente({
+        paciente,
+        medicoId,
+        especialidadId,
+        practicaId,
+        tipoPrestacion,
+        duracionTurnoEnMins,
+        sedeId,
+        fechaDesde,
+        fechaHasta,
+        page = 1,
+        limit = 20,
+        sortBy = 'fecha',
+        sortOrder = 'asc',
+    }) {
+        const turnos = await this.generarTurnosDisponiblesFiltrados({
+            medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta,
+        });
+
+        const turnosConCobertura = await Promise.all(
+            turnos.map(turno => this.agregarCoberturaYMonto(turno, paciente))
+        );
+
+        return this.aplicarOrdenYPaginacion(turnosConCobertura, {
+            page,
+            limit,
+            sortBy,
+            sortOrder,
+        });
+    }
+
+    async generarTurnosDisponiblesFiltrados({ medicoId, especialidadId, practicaId, tipoPrestacion, duracionTurnoEnMins, sedeId, fechaDesde, fechaHasta }) {
         const medicos = await this.obtenerMedicosParaBusqueda({ medicoId, especialidadId, practicaId, tipoPrestacion });
         const rangoFechas = this.resolverRangoFechas({ fechaDesde, fechaHasta });
 
@@ -210,6 +248,104 @@ export class TurnoService {
         }));
 
         return resultados.flat();
+    }
+
+    async agregarCoberturaYMonto(turno, paciente) {
+        const cobertura = await this.obtenerNivelCobertura(turno, paciente);
+        const costoBase = this.obtenerCostoBase(turno);
+
+        return {
+            ...turno.toJSON(),
+            cobertura,
+            costoBase,
+            montoAbonar: this.calcularMontoAbonar(costoBase, cobertura),
+        };
+    }
+
+    async obtenerNivelCobertura(turno, paciente) {
+        const obraSocialId = this.obtenerId(paciente?.obraSocial);
+        const planId = this.obtenerId(paciente?.plan);
+
+        if (!obraSocialId || !planId) {
+            return NivelCobertura.NO_CUBIERTA;
+        }
+
+        const plan = await this.obraSocialService.buscarPlan(obraSocialId, planId);
+        const practicaId = this.obtenerId(turno.practica);
+
+        if (practicaId) {
+            return this.buscarCobertura(
+                plan.coberturasPractica,
+                'practica',
+                practicaId
+            );
+        }
+
+        return this.buscarCobertura(
+            plan.coberturasEspecialidad,
+            'especialidad',
+            this.obtenerId(turno.especialidad)
+        );
+    }
+
+    buscarCobertura(coberturas, campoPrestacion, prestacionId) {
+        const cobertura = (coberturas ?? []).find(item =>
+            this.obtenerId(item[campoPrestacion]) === prestacionId
+        );
+
+        return cobertura?.nivel ?? NivelCobertura.NO_CUBIERTA;
+    }
+
+    obtenerId(valor) {
+        if (!valor) return null;
+        return typeof valor === 'string' ? valor : valor.id;
+    }
+
+    obtenerCostoBase(turno) {
+        return turno.costo
+            ?? turno.especialidad?.costoConsulta
+            ?? turno.practica?.costo
+            ?? 0;
+    }
+
+    calcularMontoAbonar(costoBase, cobertura) {
+        if (cobertura === NivelCobertura.TOTAL) return 0;
+        if (cobertura === NivelCobertura.PARCIAL) return costoBase * 0.5;
+        return costoBase;
+    }
+
+    aplicarOrdenYPaginacion(turnos, { page, limit, sortBy, sortOrder }) {
+        const pagina = this.normalizarEnteroPositivo(page, 1);
+        const limite = this.normalizarEnteroPositivo(limit, 20);
+        const direccion = sortOrder === 'desc' ? -1 : 1;
+        const campoOrdenamiento = sortBy === 'costo' ? 'costoBase' : 'fechaHora';
+
+        const ordenados = [...turnos].sort((a, b) => {
+            const valorA = campoOrdenamiento === 'fechaHora'
+                ? new Date(a.fechaHora).getTime()
+                : a[campoOrdenamiento];
+            const valorB = campoOrdenamiento === 'fechaHora'
+                ? new Date(b.fechaHora).getTime()
+                : b[campoOrdenamiento];
+
+            return (valorA - valorB) * direccion;
+        });
+
+        const desde = (pagina - 1) * limite;
+        const items = ordenados.slice(desde, desde + limite);
+
+        return {
+            page: pagina,
+            limit: limite,
+            total: ordenados.length,
+            totalPages: Math.ceil(ordenados.length / limite),
+            items,
+        };
+    }
+
+    normalizarEnteroPositivo(valor, valorPorDefecto) {
+        const numero = Number(valor);
+        return Number.isInteger(numero) && numero > 0 ? numero : valorPorDefecto;
     }
 
     async obtenerMedicosParaBusqueda({ medicoId, especialidadId, practicaId, tipoPrestacion }) {
