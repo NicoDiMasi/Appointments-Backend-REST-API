@@ -61,8 +61,6 @@ export class Agenda {
             estado: EstadoTurno.DISPONIBLE,
             historialEstados: [],
             costo: prestacion.costoConsulta ?? prestacion.costo,
-            duracionTurno,
-            modulosRequeridos: cantidadModulos,
           });
 
           turnosGenerados.push(turnoDisponible);
@@ -113,8 +111,6 @@ export class Agenda {
                 estado: EstadoTurno.DISPONIBLE,
                 historialEstados: [],
                 costo: prestacion.costoConsulta ?? prestacion.costo,
-                duracionTurno,
-                modulosRequeridos: cantidadModulos,
               });
 
               turnosGenerados.push(turnoDisponible);

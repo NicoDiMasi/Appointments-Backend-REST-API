@@ -30,10 +30,14 @@ const pacienteSchema = new mongoose.Schema({
         type: String,
         default: null,
         trim: true
+    },
+    activo:{
+        type: Boolean,
+        default: true
     }
 },{
     timestamps: true,
-    versionkey: false,
+    versionKey: false,
     collection: 'pacientes'
 })
 
