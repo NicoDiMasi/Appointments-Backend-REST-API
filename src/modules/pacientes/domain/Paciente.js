@@ -6,9 +6,10 @@ export class Paciente {
     this.nombre = nombre;
     this.obraSocial = obraSocial;
     this.plan = plan;
+    this.activo = true; //para eliminacion logica
   }
 
-  static create({ id, usuario = null, dni, nombre, obraSocial = null, plan = null }) { //LOS DEJO COMO NULL PORQUE POR EL MOMENTO NO ES NECESARIO
+  static create({ id, usuario = null, dni, nombre, obraSocial = null, plan = null}) { //LOS DEJO COMO NULL PORQUE POR EL MOMENTO NO ES NECESARIO
     if (!id || typeof id !== 'string' || id.trim() === '') {
       throw new Error('El id del paciente es obligatorio');
     }
@@ -25,7 +26,7 @@ export class Paciente {
       dni,
       nombre,
       obraSocial,
-      plan,
+      plan
     });
   }
 }

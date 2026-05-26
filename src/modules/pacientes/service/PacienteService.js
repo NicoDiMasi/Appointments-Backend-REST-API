@@ -13,12 +13,12 @@ export class PacienteService {
     this.turnoService = turnoService;
   }
 
-  findAll() {
-    return this.repository.findAll();
+  async findAll() {
+    return await this.repository.findAll();
   }
 
-  findById(pacienteId) {
-    const paciente = this.repository.findById(pacienteId);
+  async findById(pacienteId) {
+    const paciente = await this.repository.findById(pacienteId);
 
     if (!paciente) {
       throw new PacienteNotFoundError(pacienteId);
@@ -27,17 +27,17 @@ export class PacienteService {
     return paciente;
   }
 
-  crearPaciente(datosPaciente) {
+   async crearPaciente(datosPaciente) {
     try {
       const paciente = Paciente.create(datosPaciente);
-      return this.repository.save(paciente);
+      return await this.repository.save(paciente);
     } catch (error) {
       throw new PacienteInvalidoError(error.message);
     }
   }
 
-  actualizarPaciente(pacienteId, cambios) {
-    const paciente = this.findById(pacienteId);
+  async actualizarPaciente(pacienteId, cambios) {
+    const paciente = await this.findById(pacienteId);
 
     const datosActualizados = {
       ...paciente,
@@ -46,40 +46,51 @@ export class PacienteService {
     };
 
     try {
+      //puede sonar redundante pero Paciente.create sirve como validador.
       const pacienteActualizado = Paciente.create(datosActualizados);
-      return this.repository.save(pacienteActualizado);
+      const {id, ...datos} = pacienteActualizado;
+      return await this.repository.updateById(id, datos);
     } catch (error) {
       throw new PacienteInvalidoError(error.message);
     }
   }
 
-  eliminarPaciente(pacienteId) {
-    this.findById(pacienteId);
-    this.repository.deleteById(pacienteId);
+  async eliminarPaciente(pacienteId) {
+    await this.findById(pacienteId);
+    await this.repository.deleteById(pacienteId);
   }
 
-  reservarTurno(pacienteId, datosTurno) {
-    const paciente = this.findById(pacienteId);
+  async reservarTurno(pacienteId, datosTurno) {
+    const paciente = await this.findById(pacienteId);
 
-    return this.turnoService.reservarTurnoPaciente(paciente, datosTurno);
+    return await this.turnoService.reservarTurnoPaciente(paciente, datosTurno);
   }
 
-  cancelarTurno(pacienteId, turnoId, motivo) {
-    const paciente = this.findById(pacienteId);
+  async buscarTurnosDisponibles(pacienteId, filtros) {
+    const paciente = await this.findById(pacienteId);
 
-    return this.turnoService.cancelarTurnoPaciente(paciente, turnoId, motivo);
+    return await this.turnoService.buscarTurnosDisponiblesParaPaciente({
+      ...filtros,
+      paciente,
+    });
   }
 
-  consultarHistorialTurnos(pacienteId) {
-    this.findById(pacienteId);
+  async cancelarTurno(pacienteId, turnoId, motivo) {
+    const paciente = await this.findById(pacienteId);
 
-    return this.turnoService.findByPacienteId(pacienteId);
+    return await this.turnoService.cancelarTurnoPaciente(paciente, turnoId, motivo);
   }
 
-  cambiarTurno(pacienteId, turnoId, cambios) {
-    const paciente = this.findById(pacienteId);
+  async consultarHistorialTurnos(pacienteId) {
+    await this.findById(pacienteId);
 
-    return this.turnoService.cambiarTurnoPaciente(paciente, turnoId, cambios);
+    return await this.turnoService.findByPacienteId(pacienteId);
+  }
+
+  async cambiarTurno(pacienteId, turnoId, cambios) {
+    const paciente = await this.findById(pacienteId);
+
+    return await this.turnoService.cambiarTurnoPaciente(paciente, turnoId, cambios);
   }
 }
 
