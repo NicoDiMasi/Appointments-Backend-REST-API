@@ -4,7 +4,7 @@ import { medicoModel } from '../src/modules/medicos/schemas/MedicoSchema.js';
 import { pacienteModel } from '../src/modules/pacientes/schemas/pacienteSchema.js';
 import { obraSocialModel } from '../src/modules/obrasSociales/schemas/ObraSocialSchema.js';
 
-//Este script sirve para cargar algunos datos de prueba a Mongo. Una vez se ejecuta, ya quedan persistidos
+//Este script sirve para cargar algunos datos de prueba a Mongo. Una vez se ejecuta, ya quedan persistidos. Se ejecuta con "npm run seed:mongo"
 
 dotenv.config();
 
