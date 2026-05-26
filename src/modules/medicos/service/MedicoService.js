@@ -1,4 +1,5 @@
 import { medicoRepository } from '../repository/MedicoRepository.js';
+import { Medico } from '../domain/Medico.js';
 import { DisponibilidadHoraria } from '../domain/DisponibilidadHoraria.js';
 import { Especialidad } from '../domain/Especialidad.js';
 import { Practica } from '../domain/Practica.js';
@@ -40,8 +41,24 @@ function obtenerColeccionServicios(medico, tipo) {
 }
 //SERVICIO: Especialidad o Práctica
 export const MedicoService = {
-  listarServicios(medicoId) {
-    const medico = medicoRepository.findById(medicoId);
+
+  async findAll() {
+    return medicoRepository.findAll();
+  },
+
+  async findById(medicoId) {
+    const medico = await medicoRepository.findById(medicoId);
+    if (!medico) throw new MedicoNotFoundError(medicoId);
+    return medico;
+  },
+
+  async crearMedico(datos) {
+    const medico = Medico.create(datos);
+    return await medicoRepository.save(medico);
+  },
+
+  async listarServicios(medicoId) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     return {
@@ -50,8 +67,8 @@ export const MedicoService = {
     };
   },
 
-  agregarServicio(medicoId, datos) {
-    const medico = medicoRepository.findById(medicoId);
+  async agregarServicio(medicoId, datos) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const { tipo, ...datosServicio } = datos;
@@ -63,13 +80,13 @@ export const MedicoService = {
 
     const servicio = crear(datosServicio);
     coleccion.push(servicio);
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { especialidades: medico.especialidades, practicas: medico.practicas });
 
     return servicio;
   },
 
-  actualizarServicio(medicoId, tipo, servicioId, cambios) {
-    const medico = medicoRepository.findById(medicoId);
+  async actualizarServicio(medicoId, tipo, servicioId, cambios) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const { coleccion, crear } = obtenerColeccionServicios(medico, tipo);
@@ -83,13 +100,13 @@ export const MedicoService = {
     });
 
     coleccion[index] = servicioActualizado;
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { especialidades: medico.especialidades, practicas: medico.practicas });
 
     return servicioActualizado;
   },
 
-  eliminarServicio(medicoId, tipo, servicioId) {
-    const medico = medicoRepository.findById(medicoId);
+  async eliminarServicio(medicoId, tipo, servicioId) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const { coleccion } = obtenerColeccionServicios(medico, tipo);
@@ -97,17 +114,17 @@ export const MedicoService = {
     if (index === -1) throw new ServicioNotFoundError(tipo, servicioId);
 
     coleccion.splice(index, 1);
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { especialidades: medico.especialidades, practicas: medico.practicas });
   },
 
-  listarDisponibilidades(medicoId) {
-    const medico = medicoRepository.findById(medicoId);
+  async listarDisponibilidades(medicoId) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
     return medico.disponibilidades;
   },
 
-  agregarDisponibilidad(medicoId, datos) {
-    const medico = medicoRepository.findById(medicoId);
+  async agregarDisponibilidad(medicoId, datos) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const disponibilidad = DisponibilidadHoraria.create(datos);
@@ -117,12 +134,12 @@ export const MedicoService = {
     }
 
     medico.definirDisponibilidad(disponibilidad);
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { disponibilidades: medico.disponibilidades });
     return disponibilidad;
   },
 
-  actualizarDisponibilidad(medicoId, diaSemana, cambios) {
-    const medico = medicoRepository.findById(medicoId);
+  async actualizarDisponibilidad(medicoId, diaSemana, cambios) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const index = medico.disponibilidades.findIndex(d => d.diaSemana === diaSemana);
@@ -141,30 +158,30 @@ export const MedicoService = {
 
     const actualizada = DisponibilidadHoraria.create(datosMergeados);
     medico.disponibilidades[index] = actualizada;
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { disponibilidades: medico.disponibilidades });
     return actualizada;
   },
 
-  eliminarDisponibilidad(medicoId, diaSemana) {
-    const medico = medicoRepository.findById(medicoId);
+  async eliminarDisponibilidad(medicoId, diaSemana) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     const index = medico.disponibilidades.findIndex(d => d.diaSemana === diaSemana);
     if (index === -1) throw new DisponibilidadNotFoundError(diaSemana);
 
     medico.disponibilidades.splice(index, 1);
-    medicoRepository.save(medico);
+    await medicoRepository.updateById(medico.id, { disponibilidades: medico.disponibilidades });
   },
 
-  consultarTurnosDePaciente(medicoId, pacienteId) {
-    const medico = medicoRepository.findById(medicoId);
+  async consultarTurnosDePaciente(medicoId, pacienteId) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     return turnoService.findByMedicoAndPacienteId(medicoId, pacienteId);
   },
 
-  actualizarTurno(medicoId, turnoId, cambios) {
-    const medico = medicoRepository.findById(medicoId);
+  async actualizarTurno(medicoId, turnoId, cambios) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     if (cambios.estado === 'CANCELADO') {
@@ -201,8 +218,8 @@ export const MedicoService = {
     return turnoActualizado;
   },
 
-  consultarDisponibilidadTurno(medicoId, filtros) {
-    const medico = medicoRepository.findById(medicoId);
+  async consultarDisponibilidadTurno(medicoId, filtros) {
+    const medico = await medicoRepository.findById(medicoId);
     if (!medico) throw new MedicoNotFoundError(medicoId);
 
     return turnoService.consultarDisponibilidad({

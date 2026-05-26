@@ -99,4 +99,17 @@ export const PacienteController = {
       return next(error);
     }
   },
+
+  async buscarTurnosDisponibles(req, res, next) {
+    try {
+      const turnos = await pacienteService.buscarTurnosDisponibles(
+          req.params.id,
+          req.query
+      );
+
+      return res.status(200).json(turnos);
+    } catch (error) {
+      return next(error);
+    }
+  },
 };

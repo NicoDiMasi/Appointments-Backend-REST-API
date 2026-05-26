@@ -1,0 +1,1526 @@
+﻿openapi: 3.0.3
+info:
+  title: Documentacion de la API de Sweet Medical
+  version: 1.0.0
+  description: Documentacion de la API para gestion de medicos, pacientes, obras sociales, turnos, disponibilidad y busqueda de turnos con cobertura calculada desde datos persistidos en MongoDB.
+servers:
+  - url: http://localhost:3000
+    description: Entorno local
+tags:
+  - name: Documentacion
+    description: Especificacion y documentacion interactiva de la API
+  - name: Generales
+    description: Endpoints generales de la aplicacion
+  - name: Health
+    description: Estado del servidor
+  - name: Pacientes
+    description: Gestion de pacientes y turnos vistos por paciente
+  - name: Medicos
+    description: Servicios, disponibilidades y turnos vistos por medico
+  - name: Turnos
+    description: Gestion y consulta de turnos
+  - name: Obras Sociales
+    description: Obras sociales, planes y coberturas
+
+paths:
+  /documentacion-api.yaml:
+    get:
+      tags: [Documentacion]
+      summary: Obtener especificacion OpenAPI en formato YAML
+      responses:
+        "200":
+          description: Archivo YAML con la documentacion de la API
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /:
+    get:
+      tags: [Generales]
+      summary: Mensaje de bienvenida
+      responses:
+        "200":
+          description: Mensaje simple de bienvenida
+          content:
+            text/html:
+              schema:
+                type: string
+              example: Bienvenido a Sweet Medical
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Consultar estado del servidor
+      responses:
+        "200":
+          description: Servidor activo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /pacientes:
+    get:
+      tags: [Pacientes]
+      summary: Listar pacientes
+      responses:
+        "200":
+          description: Lista de pacientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Paciente"
+    post:
+      tags: [Pacientes]
+      summary: Crear paciente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacienteInput"
+            example:
+              id: pac-001
+              usuario:
+                id: usr-001
+                email: juan@example.com
+              dni: "30111222"
+              nombre: Juan Lopez
+              obraSocial: os-001
+              plan: plan-210
+      responses:
+        "201":
+          description: Paciente creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /pacientes/{id}:
+    get:
+      tags: [Pacientes]
+      summary: Buscar paciente por ID
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      responses:
+        "200":
+          description: Paciente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Pacientes]
+      summary: Actualizar paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacienteUpdate"
+            example:
+              nombre: Juan Lopez Actualizado
+              plan: plan-310
+      responses:
+        "200":
+          description: Paciente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Pacientes]
+      summary: Eliminar paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      responses:
+        "204":
+          description: Paciente eliminado
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /pacientes/{id}/turnos:
+    get:
+      tags: [Pacientes]
+      summary: Consultar historial de turnos de un paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      responses:
+        "200":
+          description: Turnos del paciente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Turno"
+    post:
+      tags: [Pacientes]
+      summary: Reservar turno para un paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservaTurnoInput"
+      responses:
+        "201":
+          description: Turno reservado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /pacientes/{id}/turnos/disponibles:
+    get:
+      tags: [Pacientes]
+      summary: Buscar turnos disponibles para un paciente con cobertura y monto
+      description: Genera turnos disponibles a partir de medicos, turnos, paciente, obra social y plan persistidos en MongoDB. La respuesta incluye cobertura, costo base, monto a abonar, paginacion y ordenamiento.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/MedicoIdQuery"
+        - $ref: "#/components/parameters/EspecialidadIdQuery"
+        - $ref: "#/components/parameters/PracticaIdQuery"
+        - $ref: "#/components/parameters/TipoPrestacionQuery"
+        - $ref: "#/components/parameters/SedeIdQuery"
+        - $ref: "#/components/parameters/FechaDesdeQuery"
+        - $ref: "#/components/parameters/FechaHastaQuery"
+        - $ref: "#/components/parameters/DuracionTurnoQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SortByQuery"
+        - $ref: "#/components/parameters/SortOrderQuery"
+      responses:
+        "200":
+          description: Resultados paginados con cobertura y monto a abonar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnosDisponiblesPaginados"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /pacientes/{id}/turnos/{turnoId}/cancelacion:
+    patch:
+      tags: [Pacientes]
+      summary: Cancelar turno desde paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/TurnoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                motivo:
+                  type: string
+              required: [motivo]
+            example:
+              motivo: El paciente no puede asistir
+      responses:
+        "200":
+          description: Turno cancelado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+
+  /pacientes/{id}/turnos/{turnoId}/cambio:
+    patch:
+      tags: [Pacientes]
+      summary: Cambiar turno de un paciente
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/TurnoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CambioTurnoInput"
+      responses:
+        "200":
+          description: Turno cambiado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+
+  /medicos:
+    get:
+      tags: [Medicos]
+      summary: Listar medicos
+      responses:
+        "200":
+          description: Lista de medicos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medico"
+    post:
+      tags: [Medicos]
+      summary: Crear medico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicoInput"
+            example:
+              id: med-004
+              matricula: MP-4444
+              nombre: Valeria Suarez
+              especialidades:
+                - id: esp-010
+                  nombre: Dermatologia
+                  duracionTurnoEnMins: 30
+                  costoConsulta: 5500
+              practicas: []
+              disponibilidades:
+                - diaSemana: LUNES
+                  horaDesde: "09:00"
+                  horaHasta: "12:00"
+              sedes:
+                - id: sede-001
+                  nombre: Sede Central
+                  direccion: Av. Siempre Viva 123
+      responses:
+        "201":
+          description: Medico creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medico"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /medicos/{medicoId}:
+    get:
+      tags: [Medicos]
+      summary: Buscar medico por ID
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      responses:
+        "200":
+          description: Medico encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medico"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /medicos/{medicoId}/servicios:
+    get:
+      tags: [Medicos]
+      summary: Listar servicios de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      responses:
+        "200":
+          description: Especialidades y practicas del medico
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiciosMedico"
+    post:
+      tags: [Medicos]
+      summary: Agregar servicio a un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/EspecialidadInput"
+                - $ref: "#/components/schemas/PracticaInput"
+            examples:
+              especialidad:
+                value:
+                  tipo: especialidad
+                  id: esp-test-001
+                  nombre: Dermatologia
+                  duracionTurnoEnMins: 30
+                  costoConsulta: 5500
+              practica:
+                value:
+                  tipo: practica
+                  id: pra-test-001
+                  codigo: RX-TORAX
+                  nombre: Radiografia de torax
+                  duracionTurnoEnMins: 40
+                  costo: 8000
+      responses:
+        "201":
+          description: Servicio agregado
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Especialidad"
+                  - $ref: "#/components/schemas/Practica"
+
+  /medicos/{medicoId}/servicios/{tipo}/{servicioId}:
+    patch:
+      tags: [Medicos]
+      summary: Actualizar servicio de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/TipoServicio"
+        - $ref: "#/components/parameters/ServicioId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServicioUpdate"
+            example:
+              duracionTurnoEnMins: 60
+              costo: 9000
+      responses:
+        "200":
+          description: Servicio actualizado
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Especialidad"
+                  - $ref: "#/components/schemas/Practica"
+    delete:
+      tags: [Medicos]
+      summary: Eliminar servicio de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/TipoServicio"
+        - $ref: "#/components/parameters/ServicioId"
+      responses:
+        "204":
+          description: Servicio eliminado
+
+  /medicos/{medicoId}/disponibilidades:
+    get:
+      tags: [Medicos]
+      summary: Listar disponibilidades de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      responses:
+        "200":
+          description: Disponibilidades del medico
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DisponibilidadHoraria"
+    post:
+      tags: [Medicos]
+      summary: Agregar disponibilidad a un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisponibilidadHoraria"
+            example:
+              diaSemana: MARTES
+              horaDesde: "10:00"
+              horaHasta: "12:00"
+      responses:
+        "201":
+          description: Disponibilidad agregada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisponibilidadHoraria"
+
+  /medicos/{medicoId}/disponibilidades/{diaSemana}:
+    patch:
+      tags: [Medicos]
+      summary: Actualizar disponibilidad de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/DiaSemana"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisponibilidadUpdate"
+            example:
+              horaDesde: "11:00"
+              horaHasta: "13:00"
+      responses:
+        "200":
+          description: Disponibilidad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisponibilidadHoraria"
+    delete:
+      tags: [Medicos]
+      summary: Eliminar disponibilidad de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/DiaSemana"
+      responses:
+        "204":
+          description: Disponibilidad eliminada
+
+  /medicos/{medicoId}/disponibilidades-turnos:
+    get:
+      tags: [Medicos]
+      summary: Consultar disponibilidad de turno de un medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/FechaHoraQuery"
+        - $ref: "#/components/parameters/EspecialidadIdQuery"
+        - $ref: "#/components/parameters/PracticaIdQuery"
+        - $ref: "#/components/parameters/TipoPrestacionQuery"
+      responses:
+        "200":
+          description: Analisis de disponibilidad
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisponibilidadTurno"
+
+  /medicos/{medicoId}/pacientes/{pacienteId}/turnos:
+    get:
+      tags: [Medicos]
+      summary: Consultar turnos de un paciente vistos por medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/PacienteIdPath"
+      responses:
+        "200":
+          description: Turnos del paciente con ese medico
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Turno"
+
+  /medicos/{medicoId}/turnos/{turnoId}:
+    patch:
+      tags: [Medicos]
+      summary: Actualizar estado de un turno desde medico
+      parameters:
+        - $ref: "#/components/parameters/MedicoId"
+        - $ref: "#/components/parameters/TurnoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActualizarEstadoTurnoInput"
+            example:
+              estado: CANCELADO
+              motivo: El medico no puede atender
+      responses:
+        "200":
+          description: Turno actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+
+  /turnos:
+    get:
+      tags: [Turnos]
+      summary: Listar turnos
+      responses:
+        "200":
+          description: Lista de turnos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Turno"
+    post:
+      tags: [Turnos]
+      summary: Crear turno directamente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TurnoInput"
+      responses:
+        "201":
+          description: Turno creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+
+  /turnos/{id}:
+    get:
+      tags: [Turnos]
+      summary: Buscar turno por ID
+      parameters:
+        - $ref: "#/components/parameters/TurnoIdAsId"
+      responses:
+        "200":
+          description: Turno encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Turnos]
+      summary: Actualizar turno
+      parameters:
+        - $ref: "#/components/parameters/TurnoIdAsId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TurnoUpdate"
+      responses:
+        "200":
+          description: Turno actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Turno"
+    delete:
+      tags: [Turnos]
+      summary: Eliminar turno
+      parameters:
+        - $ref: "#/components/parameters/TurnoIdAsId"
+      responses:
+        "204":
+          description: Turno eliminado
+
+  /turnos/disponibilidades:
+    get:
+      tags: [Turnos]
+      summary: Consultar disponibilidad para un horario puntual
+      parameters:
+        - $ref: "#/components/parameters/MedicoIdQueryRequired"
+        - $ref: "#/components/parameters/FechaHoraQuery"
+        - $ref: "#/components/parameters/EspecialidadIdQuery"
+        - $ref: "#/components/parameters/PracticaIdQuery"
+        - $ref: "#/components/parameters/TipoPrestacionQuery"
+      responses:
+        "200":
+          description: Analisis de disponibilidad
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisponibilidadTurno"
+
+  /turnos/disponibles:
+    get:
+      tags: [Turnos]
+      summary: Generar turnos disponibles sin calcular cobertura de paciente
+      description: Devuelve una lista simple de turnos disponibles. Para obtener cobertura, costo base, monto a abonar, paginacion y ordenamiento, usar GET /pacientes/{id}/turnos/disponibles.
+      parameters:
+        - $ref: "#/components/parameters/MedicoIdQuery"
+        - $ref: "#/components/parameters/EspecialidadIdQuery"
+        - $ref: "#/components/parameters/PracticaIdQuery"
+        - $ref: "#/components/parameters/TipoPrestacionQuery"
+        - $ref: "#/components/parameters/SedeIdQuery"
+        - $ref: "#/components/parameters/FechaDesdeQuery"
+        - $ref: "#/components/parameters/FechaHastaQuery"
+        - $ref: "#/components/parameters/DuracionTurnoQuery"
+      responses:
+        "200":
+          description: Turnos disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Turno"
+
+  /turnos/solicitudes:
+    post:
+      tags: [Turnos]
+      summary: Solicitar turno
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TurnoInput"
+      responses:
+        "201":
+          description: Solicitud creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  turno:
+                    $ref: "#/components/schemas/Turno"
+                  disponibilidad:
+                    $ref: "#/components/schemas/DisponibilidadTurno"
+
+  /obras-sociales:
+    get:
+      tags: [Obras Sociales]
+      summary: Listar obras sociales
+      responses:
+        "200":
+          description: Obras sociales registradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObraSocial"
+
+  /obras-sociales/{obraSocialId}:
+    get:
+      tags: [Obras Sociales]
+      summary: Buscar obra social por ID
+      parameters:
+        - $ref: "#/components/parameters/ObraSocialId"
+      responses:
+        "200":
+          description: Obra social encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraSocial"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /obras-sociales/{obraSocialId}/planes:
+    get:
+      tags: [Obras Sociales]
+      summary: Listar planes de una obra social
+      parameters:
+        - $ref: "#/components/parameters/ObraSocialId"
+      responses:
+        "200":
+          description: Planes de la obra social
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plan"
+
+  /obras-sociales/{obraSocialId}/planes/{planId}:
+    get:
+      tags: [Obras Sociales]
+      summary: Buscar plan de una obra social
+      parameters:
+        - $ref: "#/components/parameters/ObraSocialId"
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: Plan encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    PacienteId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: pac-001
+    PacienteIdPath:
+      name: pacienteId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: pac-001
+    MedicoId:
+      name: medicoId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: med-001
+    MedicoIdQuery:
+      name: medicoId
+      in: query
+      required: false
+      schema:
+        type: string
+      example: med-001
+    MedicoIdQueryRequired:
+      name: medicoId
+      in: query
+      required: true
+      schema:
+        type: string
+      example: med-001
+    TurnoId:
+      name: turnoId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: tur-001
+    TurnoIdAsId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: tur-001
+    ObraSocialId:
+      name: obraSocialId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: os-001
+    PlanId:
+      name: planId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: plan-210
+    ServicioId:
+      name: servicioId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: esp-001
+    TipoServicio:
+      name: tipo
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [especialidad, practica]
+      example: practica
+    DiaSemana:
+      name: diaSemana
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/DiaSemana"
+      example: MARTES
+    EspecialidadIdQuery:
+      name: especialidadId
+      in: query
+      required: false
+      schema:
+        type: string
+      example: esp-001
+    PracticaIdQuery:
+      name: practicaId
+      in: query
+      required: false
+      schema:
+        type: string
+      example: pra-001
+    TipoPrestacionQuery:
+      name: tipoPrestacion
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [especialidad, practica]
+      example: especialidad
+    SedeIdQuery:
+      name: sedeId
+      in: query
+      required: false
+      schema:
+        type: string
+      example: sede-001
+    FechaHoraQuery:
+      name: fechaHora
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+      example: "2026-05-25T09:20:00.000-03:00"
+    FechaDesdeQuery:
+      name: fechaDesde
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      example: "2026-06-01T00:00:00.000-03:00"
+    FechaHastaQuery:
+      name: fechaHasta
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      example: "2026-06-07T23:59:59.000-03:00"
+    DuracionTurnoQuery:
+      name: duracionTurnoEnMins
+      in: query
+      required: false
+      schema:
+        type: integer
+      example: 30
+    PageQuery:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+      example: 10
+    SortByQuery:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [fecha, costo]
+        default: fecha
+      example: costo
+    SortOrderQuery:
+      name: sortOrder
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+      example: asc
+
+  responses:
+    BadRequest:
+      description: Error de validacion o request invalido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        timestamp:
+          type: string
+          example: "25/05/2026, 09:20:00"
+        uptime:
+          type: number
+          example: 123.45
+
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        message:
+          type: string
+          example: Recurso no encontrado
+        timestamp:
+          type: string
+          example: "25/05/2026, 09:20:00"
+        details:
+          nullable: true
+
+    Paciente:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pac-001
+        usuario:
+          nullable: true
+          type: object
+          additionalProperties: true
+          example:
+            id: usr-001
+            email: juan@example.com
+        dni:
+          type: string
+          example: "30111222"
+        nombre:
+          type: string
+          example: Juan Lopez
+        obraSocial:
+          nullable: true
+          type: string
+          example: os-001
+        plan:
+          nullable: true
+          type: string
+          example: plan-210
+        activo:
+          type: boolean
+          example: true
+
+    PacienteInput:
+      type: object
+      required: [id, dni, nombre]
+      properties:
+        id:
+          type: string
+          example: pac-001
+        usuario:
+          nullable: true
+          type: object
+          additionalProperties: true
+        dni:
+          type: string
+          example: "30111222"
+        nombre:
+          type: string
+          example: Juan Lopez
+        obraSocial:
+          nullable: true
+          type: string
+          example: os-001
+        plan:
+          nullable: true
+          type: string
+          example: plan-210
+
+    PacienteUpdate:
+      type: object
+      properties:
+        usuario:
+          nullable: true
+          type: object
+          additionalProperties: true
+        dni:
+          type: string
+        nombre:
+          type: string
+        obraSocial:
+          nullable: true
+          type: string
+        plan:
+          nullable: true
+          type: string
+
+    Medico:
+      type: object
+      properties:
+        id:
+          type: string
+          example: med-001
+        matricula:
+          type: string
+          example: MN12345
+        nombre:
+          type: string
+          example: Ana Gomez
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Especialidad"
+        practicas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Practica"
+        disponibilidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisponibilidadHoraria"
+        sedes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sede"
+
+    MedicoInput:
+      type: object
+      required: [id, matricula, nombre]
+      properties:
+        id:
+          type: string
+          example: med-004
+        matricula:
+          type: string
+          example: MP-4444
+        nombre:
+          type: string
+          example: Valeria Suarez
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Especialidad"
+        practicas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Practica"
+        disponibilidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisponibilidadHoraria"
+        sedes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sede"
+
+    Especialidad:
+      type: object
+      properties:
+        id:
+          type: string
+          example: esp-001
+        nombre:
+          type: string
+          example: Cardiologia
+        duracionTurnoEnMins:
+          type: integer
+          example: 30
+        costoConsulta:
+          type: number
+          example: 5000
+
+    EspecialidadInput:
+      allOf:
+        - $ref: "#/components/schemas/Especialidad"
+        - type: object
+          properties:
+            tipo:
+              type: string
+              enum: [especialidad]
+              example: especialidad
+
+    Practica:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pra-001
+        codigo:
+          type: string
+          example: ECG
+        nombre:
+          type: string
+          example: Electrocardiograma
+        duracionTurnoEnMins:
+          type: integer
+          example: 40
+        costo:
+          type: number
+          example: 8000
+
+    PracticaInput:
+      allOf:
+        - $ref: "#/components/schemas/Practica"
+        - type: object
+          properties:
+            tipo:
+              type: string
+              enum: [practica]
+              example: practica
+
+    ServicioUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        duracionTurnoEnMins:
+          type: integer
+        costoConsulta:
+          type: number
+        costo:
+          type: number
+        codigo:
+          type: string
+
+    Sede:
+      type: object
+      properties:
+        id:
+          type: string
+          example: sede-001
+        nombre:
+          type: string
+          example: Sede Central
+        direccion:
+          type: string
+          example: Av. Siempre Viva 123
+
+    DiaSemana:
+      type: string
+      enum: [LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO, DOMINGO]
+      example: LUNES
+
+    DisponibilidadHoraria:
+      type: object
+      required: [diaSemana, horaDesde, horaHasta]
+      properties:
+        diaSemana:
+          $ref: "#/components/schemas/DiaSemana"
+        horaDesde:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "09:00"
+        horaHasta:
+          type: string
+          pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+          example: "13:00"
+
+    DisponibilidadUpdate:
+      type: object
+      properties:
+        horaDesde:
+          type: string
+          example: "11:00"
+        horaHasta:
+          type: string
+          example: "13:00"
+
+    ServiciosMedico:
+      type: object
+      properties:
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Especialidad"
+        practicas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Practica"
+
+    EstadoTurno:
+      type: string
+      enum: [DISPONIBLE, RESERVADO, CONFIRMADO, CANCELADO, REALIZADO]
+      example: RESERVADO
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          example: usr-001
+        nombre:
+          type: string
+          example: Recepcionista
+
+    CambioEstado:
+      type: object
+      properties:
+        fechaHoraIngreso:
+          type: string
+          format: date-time
+        estado:
+          $ref: "#/components/schemas/EstadoTurno"
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+        motivo:
+          type: string
+          nullable: true
+
+    Turno:
+      type: object
+      properties:
+        id:
+          type: string
+          example: tur-001
+        medico:
+          $ref: "#/components/schemas/Medico"
+        paciente:
+          nullable: true
+          oneOf:
+            - $ref: "#/components/schemas/Paciente"
+            - type: object
+        fechaHora:
+          type: string
+          format: date-time
+          example: "2026-05-25T09:20:00.000-03:00"
+        sede:
+          $ref: "#/components/schemas/Sede"
+        especialidad:
+          nullable: true
+          $ref: "#/components/schemas/Especialidad"
+        practica:
+          nullable: true
+          $ref: "#/components/schemas/Practica"
+        estado:
+          $ref: "#/components/schemas/EstadoTurno"
+        historialEstados:
+          type: array
+          items:
+            $ref: "#/components/schemas/CambioEstado"
+        costo:
+          type: number
+          example: 5000
+        duracionTurno:
+          type: integer
+          example: 40
+        modulosRequeridos:
+          type: integer
+          example: 2
+
+    TurnoInput:
+      type: object
+      required: [id, medico, fechaHora, sede, estado, costo]
+      properties:
+        id:
+          type: string
+          example: tur-manual-001
+        medico:
+          type: object
+          properties:
+            id:
+              type: string
+              example: med-001
+        paciente:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              example: pac-001
+            nombre:
+              type: string
+              example: Juan Lopez
+        fechaHora:
+          type: string
+          format: date-time
+          example: "2026-05-25T09:20:00.000-03:00"
+        sede:
+          $ref: "#/components/schemas/Sede"
+        especialidad:
+          nullable: true
+          $ref: "#/components/schemas/Especialidad"
+        practica:
+          nullable: true
+          $ref: "#/components/schemas/Practica"
+        estado:
+          $ref: "#/components/schemas/EstadoTurno"
+        historialEstados:
+          type: array
+          items:
+            $ref: "#/components/schemas/CambioEstado"
+        costo:
+          type: number
+          example: 5000
+
+    TurnoUpdate:
+      type: object
+      properties:
+        fechaHora:
+          type: string
+          format: date-time
+        sede:
+          $ref: "#/components/schemas/Sede"
+        costo:
+          type: number
+        estado:
+          $ref: "#/components/schemas/EstadoTurno"
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+        motivo:
+          type: string
+
+    ReservaTurnoInput:
+      type: object
+      required: [id, medicoId, fechaHora, sede]
+      properties:
+        id:
+          type: string
+          example: tur-pac-001
+        medicoId:
+          type: string
+          example: med-001
+        especialidadId:
+          type: string
+          example: esp-001
+        practicaId:
+          type: string
+          example: pra-001
+        tipoPrestacion:
+          type: string
+          enum: [especialidad, practica]
+          example: especialidad
+        fechaHora:
+          type: string
+          format: date-time
+          example: "2026-05-25T09:20:00.000-03:00"
+        sede:
+          $ref: "#/components/schemas/Sede"
+
+    CambioTurnoInput:
+      type: object
+      required: [fechaHora, sede]
+      properties:
+        fechaHora:
+          type: string
+          format: date-time
+          example: "2026-05-25T10:20:00.000-03:00"
+        sede:
+          $ref: "#/components/schemas/Sede"
+
+    ActualizarEstadoTurnoInput:
+      type: object
+      properties:
+        estado:
+          $ref: "#/components/schemas/EstadoTurno"
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+        motivo:
+          type: string
+
+    DisponibilidadTurno:
+      type: object
+      properties:
+        disponible:
+          type: boolean
+          example: true
+        medicoId:
+          type: string
+          example: med-001
+        duracionPrestacion:
+          type: integer
+          example: 30
+        duracionTurno:
+          type: integer
+          example: 40
+        modulosRequeridos:
+          type: integer
+          example: 2
+        turnosCercanos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Turno"
+
+    TurnoDisponible:
+      allOf:
+        - $ref: "#/components/schemas/Turno"
+        - type: object
+          properties:
+            cobertura:
+              $ref: "#/components/schemas/NivelCobertura"
+            costoBase:
+              type: number
+              example: 5000
+            montoAbonar:
+              type: number
+              example: 2500
+
+    TurnosDisponiblesPaginados:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 3
+        total:
+          type: integer
+          example: 30
+        totalPages:
+          type: integer
+          example: 10
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TurnoDisponible"
+
+    NivelCobertura:
+      type: string
+      enum: [TOTAL, PARCIAL, NO_CUBIERTA]
+      example: PARCIAL
+
+    CoberturaEspecialidad:
+      type: object
+      properties:
+        especialidad:
+          $ref: "#/components/schemas/Especialidad"
+        nivel:
+          $ref: "#/components/schemas/NivelCobertura"
+
+    CoberturaPractica:
+      type: object
+      properties:
+        practica:
+          $ref: "#/components/schemas/Practica"
+        nivel:
+          $ref: "#/components/schemas/NivelCobertura"
+
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+          example: plan-210
+        nombre:
+          type: string
+          example: "210"
+        coberturasEspecialidad:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoberturaEspecialidad"
+        coberturasPractica:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoberturaPractica"
+
+    ObraSocial:
+      type: object
+      properties:
+        id:
+          type: string
+          example: os-001
+        nombre:
+          type: string
+          example: OSDE
+        planes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Plan"
+
+
